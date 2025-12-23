@@ -29,20 +29,26 @@ const menuItemsConfig: MenuItem[] = [
   { label: 'Utilities', icon: <Wrench size={24} color="white" /> },
 ];
 
-// Essential items to show when collapsed
-const essentialItems = ['Health Map', 'AI Health Assistant', 'Emergency', 'Appointments'];
+const MenuItem = ({ item }: { item: MenuItem }) => {
+  const navigation = useNavigation<any>();
 
-const MenuItem = ({ item, onPress }: { item: MenuItem; onPress?: () => void }) => (
-  <TouchableOpacity 
-    className="m-2 flex-1 items-center rounded-xl bg-slate-900 p-3"
-    onPress={onPress}
-  >
-    <View className="mb-2 h-12 w-12 items-center justify-center rounded-full bg-secondary/30">
-      {item.icon}
-    </View>
-    <Text className="text-sm text-slate-200">{item.label}</Text>
-  </TouchableOpacity>
-);
+  const handlePress = () => {
+    if (item.screen) {
+      navigation.navigate(item.screen);
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      className="m-2 flex-1 items-center rounded-xl bg-slate-900 p-3"
+      onPress={handlePress}>
+      <View className="mb-2 h-12 w-12 items-center justify-center rounded-full bg-secondary/30">
+        {item.icon}
+      </View>
+      <Text className="text-sm text-slate-200">{item.label}</Text>
+    </TouchableOpacity>
+  );
+};
 
 export default function GridMenu({ items }: { items?: string[] }) {
   const [isExpanded, setIsExpanded] = useState(true);
