@@ -29,6 +29,9 @@ const menuItemsConfig: MenuItem[] = [
   { label: 'Utilities', icon: <Wrench size={24} color="white" /> },
 ];
 
+// Essential items to show when collapsed
+const essentialItems = ['Health Map', 'AI Health Assistant', 'Emergency', 'Appointments'];
+
 const MenuItem = ({ item }: { item: MenuItem }) => {
   const navigation = useNavigation<any>();
 
@@ -52,7 +55,6 @@ const MenuItem = ({ item }: { item: MenuItem }) => {
 
 export default function GridMenu({ items }: { items?: string[] }) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const navigation = useNavigation();
 
   const filteredItems = items 
     ? menuItemsConfig.filter((m) => items.includes(m.label)) 
@@ -67,21 +69,22 @@ export default function GridMenu({ items }: { items?: string[] }) {
     icon: isExpanded ? <ChevronUp size={24} color="white" /> : <ChevronDown size={24} color="white" />,
   };
 
-  const handleMenuPress = (item: MenuItem) => {
-    if (item.screen) {
-      navigation.navigate(item.screen as never);
-    }
-  };
-
   return (
     <View className="-m-2 flex-row flex-wrap px-2">
       {displayItems.map((item) => (
         <View key={item.label} style={{ width: '48%' }}>
-          <MenuItem item={item} onPress={() => handleMenuPress(item)} />
+          <MenuItem item={item} />
         </View>
       ))}
       <View style={{ width: '48%' }}>
-        <MenuItem item={toggleButton} onPress={() => setIsExpanded(!isExpanded)} />
+        <TouchableOpacity
+          className="m-2 flex-1 items-center rounded-xl bg-slate-900 p-3"
+          onPress={() => setIsExpanded(!isExpanded)}>
+          <View className="mb-2 h-12 w-12 items-center justify-center rounded-full bg-secondary/30">
+            {toggleButton.icon}
+          </View>
+          <Text className="text-sm text-slate-200">{toggleButton.label}</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
