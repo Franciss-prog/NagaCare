@@ -11,6 +11,10 @@ import EmergencyScreen from '../screens/EmergencyScreen';
 import NewsScreen from '../screens/NewsScreen';
 import ServicesScreen from '../screens/ServicesScreen';
 import AccountScreen from '../screens/AccountScreen';
+import HealthMapScreen from '../screens/HealthMapScreen';
+import AIAssistantScreen from '../screens/AIAssistantScreen';
+import AppointmentsScreen from '../screens/AppointmentsScreen';
+import FacilitiesScreen from '../screens/FacilitiesScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
