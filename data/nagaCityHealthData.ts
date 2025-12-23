@@ -24,13 +24,13 @@ export interface BarangayHealthData {
 }
 
 // Naga City center coordinates: 13.6218° N, 123.1948° E
-// Data for selected barangays in Naga City, Camarines Sur
+// Precise coordinates based on verified barangay locations
 
 export const nagaCityHealthData: BarangayHealthData[] = [
   {
     id: 'brgy-abella',
     name: 'Abella',
-    coordinates: { latitude: 13.6195, longitude: 123.1920 },
+    coordinates: { latitude: 13.6235, longitude: 123.1799 },
     population: 3245,
     childrenHealth: {
       totalChildren: 485,
@@ -48,7 +48,7 @@ export const nagaCityHealthData: BarangayHealthData[] = [
   {
     id: 'brgy-bagumbayan-norte',
     name: 'Bagumbayan Norte',
-    coordinates: { latitude: 13.6240, longitude: 123.1885 },
+    coordinates: { latitude: 13.6289, longitude: 123.1895 },
     population: 4120,
     childrenHealth: {
       totalChildren: 620,
@@ -64,243 +64,9 @@ export const nagaCityHealthData: BarangayHealthData[] = [
     },
   },
   {
-    id: 'brgy-balatas',
-    name: 'Balatas',
-    coordinates: { latitude: 13.6155, longitude: 123.1975 },
-    population: 2890,
-    childrenHealth: {
-      totalChildren: 425,
-      vaccinationCoverage: 95,
-      vaccinationCompletionRate: 91,
-      fullyImmunized: 387,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 32,
-      totalPregnant: 35,
-      enrollmentRate: 91,
-      prenatalVisitCompliance: 89,
-    },
-  },
-  {
-    id: 'brgy-carolina',
-    name: 'Carolina',
-    coordinates: { latitude: 13.6280, longitude: 123.1950 },
-    population: 5210,
-    childrenHealth: {
-      totalChildren: 780,
-      vaccinationCoverage: 90,
-      vaccinationCompletionRate: 86,
-      fullyImmunized: 671,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 58,
-      totalPregnant: 65,
-      enrollmentRate: 89,
-      prenatalVisitCompliance: 87,
-    },
-  },
-  {
-    id: 'brgy-concepcion-pequena',
-    name: 'Concepcion Pequeña',
-    coordinates: { latitude: 13.6210, longitude: 123.2010 },
-    population: 6340,
-    childrenHealth: {
-      totalChildren: 950,
-      vaccinationCoverage: 87,
-      vaccinationCompletionRate: 82,
-      fullyImmunized: 779,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 68,
-      totalPregnant: 78,
-      enrollmentRate: 87,
-      prenatalVisitCompliance: 80,
-    },
-  },
-  {
-    id: 'brgy-dinaga',
-    name: 'Dinaga',
-    coordinates: { latitude: 13.6170, longitude: 123.1890 },
-    population: 3780,
-    childrenHealth: {
-      totalChildren: 565,
-      vaccinationCoverage: 93,
-      vaccinationCompletionRate: 89,
-      fullyImmunized: 503,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 42,
-      totalPregnant: 46,
-      enrollmentRate: 91,
-      prenatalVisitCompliance: 88,
-    },
-  },
-  {
-    id: 'brgy-igualdad-interior',
-    name: 'Igualdad Interior',
-    coordinates: { latitude: 13.6250, longitude: 123.1970 },
-    population: 2650,
-    childrenHealth: {
-      totalChildren: 398,
-      vaccinationCoverage: 94,
-      vaccinationCompletionRate: 90,
-      fullyImmunized: 358,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 28,
-      totalPregnant: 31,
-      enrollmentRate: 90,
-      prenatalVisitCompliance: 86,
-    },
-  },
-  {
-    id: 'brgy-lerma',
-    name: 'Lerma',
-    coordinates: { latitude: 13.6300, longitude: 123.1920 },
-    population: 4560,
-    childrenHealth: {
-      totalChildren: 685,
-      vaccinationCoverage: 91,
-      vaccinationCompletionRate: 87,
-      fullyImmunized: 596,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 51,
-      totalPregnant: 58,
-      enrollmentRate: 88,
-      prenatalVisitCompliance: 84,
-    },
-  },
-  {
-    id: 'brgy-liboton',
-    name: 'Liboton',
-    coordinates: { latitude: 13.6135, longitude: 123.1945 },
-    population: 3120,
-    childrenHealth: {
-      totalChildren: 470,
-      vaccinationCoverage: 89,
-      vaccinationCompletionRate: 85,
-      fullyImmunized: 400,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 35,
-      totalPregnant: 40,
-      enrollmentRate: 88,
-      prenatalVisitCompliance: 83,
-    },
-  },
-  {
-    id: 'brgy-panganiban',
-    name: 'Panganiban',
-    coordinates: { latitude: 13.6265, longitude: 123.1935 },
-    population: 5890,
-    childrenHealth: {
-      totalChildren: 885,
-      vaccinationCoverage: 86,
-      vaccinationCompletionRate: 81,
-      fullyImmunized: 717,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 62,
-      totalPregnant: 72,
-      enrollmentRate: 86,
-      prenatalVisitCompliance: 79,
-    },
-  },
-  {
-    id: 'brgy-penafrancia',
-    name: 'Peñafrancia',
-    coordinates: { latitude: 13.6190, longitude: 123.1960 },
-    population: 7240,
-    childrenHealth: {
-      totalChildren: 1085,
-      vaccinationCoverage: 92,
-      vaccinationCompletionRate: 88,
-      fullyImmunized: 955,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 78,
-      totalPregnant: 88,
-      enrollmentRate: 89,
-      prenatalVisitCompliance: 86,
-    },
-  },
-  {
-    id: 'brgy-sabang',
-    name: 'Sabang',
-    coordinates: { latitude: 13.6325, longitude: 123.1975 },
-    population: 4320,
-    childrenHealth: {
-      totalChildren: 650,
-      vaccinationCoverage: 90,
-      vaccinationCompletionRate: 86,
-      fullyImmunized: 559,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 48,
-      totalPregnant: 54,
-      enrollmentRate: 89,
-      prenatalVisitCompliance: 85,
-    },
-  },
-  {
-    id: 'brgy-san-felipe',
-    name: 'San Felipe',
-    coordinates: { latitude: 13.6220, longitude: 123.1895 },
-    population: 3540,
-    childrenHealth: {
-      totalChildren: 530,
-      vaccinationCoverage: 93,
-      vaccinationCompletionRate: 89,
-      fullyImmunized: 472,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 40,
-      totalPregnant: 44,
-      enrollmentRate: 91,
-      prenatalVisitCompliance: 87,
-    },
-  },
-  {
-    id: 'brgy-sta-cruz',
-    name: 'Sta. Cruz',
-    coordinates: { latitude: 13.6285, longitude: 123.2000 },
-    population: 4890,
-    childrenHealth: {
-      totalChildren: 735,
-      vaccinationCoverage: 88,
-      vaccinationCompletionRate: 84,
-      fullyImmunized: 617,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 55,
-      totalPregnant: 63,
-      enrollmentRate: 87,
-      prenatalVisitCompliance: 82,
-    },
-  },
-  {
-    id: 'brgy-triangulo',
-    name: 'Triangulo',
-    coordinates: { latitude: 13.6245, longitude: 123.1915 },
-    population: 8120,
-    childrenHealth: {
-      totalChildren: 1220,
-      vaccinationCoverage: 85,
-      vaccinationCompletionRate: 80,
-      fullyImmunized: 976,
-    },
-    maternalHealth: {
-      pregnantEnrolled: 82,
-      totalPregnant: 96,
-      enrollmentRate: 85,
-      prenatalVisitCompliance: 78,
-    },
-  },
-  {
     id: 'brgy-bagumbayan-sur',
     name: 'Bagumbayan Sur',
-    coordinates: { latitude: 13.6215, longitude: 123.1870 },
+    coordinates: { latitude: 13.6224, longitude: 123.1956 },
     population: 3890,
     childrenHealth: {
       totalChildren: 585,
@@ -316,9 +82,27 @@ export const nagaCityHealthData: BarangayHealthData[] = [
     },
   },
   {
+    id: 'brgy-balatas',
+    name: 'Balatas',
+    coordinates: { latitude: 13.6310, longitude: 123.2060 },
+    population: 2890,
+    childrenHealth: {
+      totalChildren: 425,
+      vaccinationCoverage: 95,
+      vaccinationCompletionRate: 91,
+      fullyImmunized: 387,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 32,
+      totalPregnant: 35,
+      enrollmentRate: 91,
+      prenatalVisitCompliance: 89,
+    },
+  },
+  {
     id: 'brgy-calauag',
     name: 'Calauag',
-    coordinates: { latitude: 13.6180, longitude: 123.2025 },
+    coordinates: { latitude: 13.6345, longitude: 123.1930 },
     population: 2450,
     childrenHealth: {
       totalChildren: 368,
@@ -336,7 +120,7 @@ export const nagaCityHealthData: BarangayHealthData[] = [
   {
     id: 'brgy-cararayan',
     name: 'Cararayan',
-    coordinates: { latitude: 13.6340, longitude: 123.1890 },
+    coordinates: { latitude: 13.6315, longitude: 123.2325 },
     population: 5670,
     childrenHealth: {
       totalChildren: 850,
@@ -352,9 +136,27 @@ export const nagaCityHealthData: BarangayHealthData[] = [
     },
   },
   {
+    id: 'brgy-carolina',
+    name: 'Carolina',
+    coordinates: { latitude: 13.6643, longitude: 123.2909 },
+    population: 5210,
+    childrenHealth: {
+      totalChildren: 780,
+      vaccinationCoverage: 90,
+      vaccinationCompletionRate: 86,
+      fullyImmunized: 671,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 58,
+      totalPregnant: 65,
+      enrollmentRate: 89,
+      prenatalVisitCompliance: 87,
+    },
+  },
+  {
     id: 'brgy-concepcion-grande',
     name: 'Concepcion Grande',
-    coordinates: { latitude: 13.6165, longitude: 123.2050 },
+    coordinates: { latitude: 13.6186, longitude: 123.2185 },
     population: 7580,
     childrenHealth: {
       totalChildren: 1140,
@@ -370,9 +172,27 @@ export const nagaCityHealthData: BarangayHealthData[] = [
     },
   },
   {
+    id: 'brgy-concepcion-pequena',
+    name: 'Concepcion Pequeña',
+    coordinates: { latitude: 13.6215, longitude: 123.2055 },
+    population: 6340,
+    childrenHealth: {
+      totalChildren: 950,
+      vaccinationCoverage: 87,
+      vaccinationCompletionRate: 82,
+      fullyImmunized: 779,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 68,
+      totalPregnant: 78,
+      enrollmentRate: 87,
+      prenatalVisitCompliance: 80,
+    },
+  },
+  {
     id: 'brgy-dayangdang',
     name: 'Dayangdang',
-    coordinates: { latitude: 13.6090, longitude: 123.1985 },
+    coordinates: { latitude: 13.6253, longitude: 123.1912 },
     population: 1850,
     childrenHealth: {
       totalChildren: 278,
@@ -388,9 +208,99 @@ export const nagaCityHealthData: BarangayHealthData[] = [
     },
   },
   {
+    id: 'brgy-del-rosario',
+    name: 'Del Rosario',
+    coordinates: { latitude: 13.6120, longitude: 123.2310 },
+    population: 3100,
+    childrenHealth: {
+      totalChildren: 465,
+      vaccinationCoverage: 91,
+      vaccinationCompletionRate: 87,
+      fullyImmunized: 423,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 36,
+      totalPregnant: 40,
+      enrollmentRate: 90,
+      prenatalVisitCompliance: 85,
+    },
+  },
+  {
+    id: 'brgy-dinaga',
+    name: 'Dinaga',
+    coordinates: { latitude: 13.6217, longitude: 123.1873 },
+    population: 3780,
+    childrenHealth: {
+      totalChildren: 565,
+      vaccinationCoverage: 93,
+      vaccinationCompletionRate: 89,
+      fullyImmunized: 503,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 42,
+      totalPregnant: 46,
+      enrollmentRate: 91,
+      prenatalVisitCompliance: 88,
+    },
+  },
+  {
+    id: 'brgy-igualdad-interior',
+    name: 'Igualdad Interior',
+    coordinates: { latitude: 13.6212, longitude: 123.1802 },
+    population: 2650,
+    childrenHealth: {
+      totalChildren: 398,
+      vaccinationCoverage: 94,
+      vaccinationCompletionRate: 90,
+      fullyImmunized: 358,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 28,
+      totalPregnant: 31,
+      enrollmentRate: 90,
+      prenatalVisitCompliance: 86,
+    },
+  },
+  {
+    id: 'brgy-lerma',
+    name: 'Lerma',
+    coordinates: { latitude: 13.6247, longitude: 123.1865 },
+    population: 4560,
+    childrenHealth: {
+      totalChildren: 685,
+      vaccinationCoverage: 91,
+      vaccinationCompletionRate: 87,
+      fullyImmunized: 596,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 51,
+      totalPregnant: 58,
+      enrollmentRate: 88,
+      prenatalVisitCompliance: 84,
+    },
+  },
+  {
+    id: 'brgy-liboton',
+    name: 'Liboton',
+    coordinates: { latitude: 13.6294, longitude: 123.1887 },
+    population: 3120,
+    childrenHealth: {
+      totalChildren: 470,
+      vaccinationCoverage: 89,
+      vaccinationCompletionRate: 85,
+      fullyImmunized: 400,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 35,
+      totalPregnant: 40,
+      enrollmentRate: 88,
+      prenatalVisitCompliance: 83,
+    },
+  },
+  {
     id: 'brgy-mabolo',
     name: 'Mabolo',
-    coordinates: { latitude: 13.6380, longitude: 123.1930 },
+    coordinates: { latitude: 13.6147, longitude: 123.1818 },
     population: 6240,
     childrenHealth: {
       totalChildren: 935,
@@ -408,7 +318,7 @@ export const nagaCityHealthData: BarangayHealthData[] = [
   {
     id: 'brgy-pacol',
     name: 'Pacol',
-    coordinates: { latitude: 13.6350, longitude: 123.2020 },
+    coordinates: { latitude: 13.6502, longitude: 123.2425 },
     population: 9850,
     childrenHealth: {
       totalChildren: 1480,
@@ -426,7 +336,7 @@ export const nagaCityHealthData: BarangayHealthData[] = [
   {
     id: 'brgy-panicuason',
     name: 'Panicuason',
-    coordinates: { latitude: 13.6050, longitude: 123.1920 },
+    coordinates: { latitude: 13.6628, longitude: 123.3183 },
     population: 4120,
     childrenHealth: {
       totalChildren: 618,
@@ -442,9 +352,63 @@ export const nagaCityHealthData: BarangayHealthData[] = [
     },
   },
   {
+    id: 'brgy-penafrancia',
+    name: 'Peñafrancia',
+    coordinates: { latitude: 13.6318, longitude: 123.1955 },
+    population: 7240,
+    childrenHealth: {
+      totalChildren: 1085,
+      vaccinationCoverage: 92,
+      vaccinationCompletionRate: 88,
+      fullyImmunized: 955,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 78,
+      totalPregnant: 88,
+      enrollmentRate: 89,
+      prenatalVisitCompliance: 86,
+    },
+  },
+  {
+    id: 'brgy-sabang',
+    name: 'Sabang',
+    coordinates: { latitude: 13.6174, longitude: 123.1823 },
+    population: 4320,
+    childrenHealth: {
+      totalChildren: 650,
+      vaccinationCoverage: 90,
+      vaccinationCompletionRate: 86,
+      fullyImmunized: 559,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 48,
+      totalPregnant: 54,
+      enrollmentRate: 89,
+      prenatalVisitCompliance: 85,
+    },
+  },
+  {
+    id: 'brgy-san-felipe',
+    name: 'San Felipe',
+    coordinates: { latitude: 13.6385, longitude: 123.2091 },
+    population: 3540,
+    childrenHealth: {
+      totalChildren: 530,
+      vaccinationCoverage: 93,
+      vaccinationCompletionRate: 89,
+      fullyImmunized: 472,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 40,
+      totalPregnant: 44,
+      enrollmentRate: 91,
+      prenatalVisitCompliance: 87,
+    },
+  },
+  {
     id: 'brgy-san-francisco',
     name: 'San Francisco',
-    coordinates: { latitude: 13.6310, longitude: 123.1895 },
+    coordinates: { latitude: 13.6226, longitude: 123.1868 },
     population: 5430,
     childrenHealth: {
       totalChildren: 815,
@@ -460,9 +424,45 @@ export const nagaCityHealthData: BarangayHealthData[] = [
     },
   },
   {
+    id: 'brgy-san-isidro',
+    name: 'San Isidro',
+    coordinates: { latitude: 13.6358, longitude: 123.2628 },
+    population: 2950,
+    childrenHealth: {
+      totalChildren: 442,
+      vaccinationCoverage: 88,
+      vaccinationCompletionRate: 84,
+      fullyImmunized: 389,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 34,
+      totalPregnant: 38,
+      enrollmentRate: 89,
+      prenatalVisitCompliance: 83,
+    },
+  },
+  {
+    id: 'brgy-santa-cruz',
+    name: 'Santa Cruz',
+    coordinates: { latitude: 13.6257, longitude: 123.1821 },
+    population: 4890,
+    childrenHealth: {
+      totalChildren: 735,
+      vaccinationCoverage: 88,
+      vaccinationCompletionRate: 84,
+      fullyImmunized: 617,
+    },
+    maternalHealth: {
+      pregnantEnrolled: 55,
+      totalPregnant: 63,
+      enrollmentRate: 87,
+      prenatalVisitCompliance: 82,
+    },
+  },
+  {
     id: 'brgy-tabuco',
     name: 'Tabuco',
-    coordinates: { latitude: 13.6120, longitude: 123.1860 },
+    coordinates: { latitude: 13.6185, longitude: 123.1861 },
     population: 3340,
     childrenHealth: {
       totalChildren: 500,
@@ -480,7 +480,7 @@ export const nagaCityHealthData: BarangayHealthData[] = [
   {
     id: 'brgy-tinago',
     name: 'Tinago',
-    coordinates: { latitude: 13.6270, longitude: 123.2030 },
+    coordinates: { latitude: 13.6228, longitude: 123.1903 },
     population: 2780,
     childrenHealth: {
       totalChildren: 418,
@@ -496,21 +496,21 @@ export const nagaCityHealthData: BarangayHealthData[] = [
     },
   },
   {
-    id: 'brgy-palestina',
-    name: 'Palestina',
-    coordinates: { latitude: 13.6145, longitude: 123.1850 },
-    population: 4560,
+    id: 'brgy-triangulo',
+    name: 'Triangulo',
+    coordinates: { latitude: 13.6139, longitude: 123.1952 },
+    population: 8120,
     childrenHealth: {
-      totalChildren: 684,
-      vaccinationCoverage: 89,
-      vaccinationCompletionRate: 85,
-      fullyImmunized: 581,
+      totalChildren: 1220,
+      vaccinationCoverage: 85,
+      vaccinationCompletionRate: 80,
+      fullyImmunized: 976,
     },
     maternalHealth: {
-      pregnantEnrolled: 50,
-      totalPregnant: 57,
-      enrollmentRate: 88,
-      prenatalVisitCompliance: 83,
+      pregnantEnrolled: 82,
+      totalPregnant: 96,
+      enrollmentRate: 85,
+      prenatalVisitCompliance: 78,
     },
   },
 ];
