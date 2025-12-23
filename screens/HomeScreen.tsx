@@ -10,8 +10,8 @@ export default function HomeScreen() {
       <Header title="City health at your fingertips" />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="px-4">
-          <Card>
-            <View className="flex-row items-center justify-between">
+          <Card >
+            <View className="flex gap-5 items-center justify-between">
               <View>
                 <Text className="text-lg font-semibold text-white">Stay safe, stay healthy</Text>
                 <Text className="mt-1 text-slate-300">Find services and assistance around you</Text>
