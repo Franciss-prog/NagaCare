@@ -9,7 +9,7 @@ export default function ChatInput({ placeholder }: { placeholder?: string }) {
         placeholder={placeholder || 'Type a message'}
         placeholderTextColor="#9CA3AF"
       />
-      <TouchableOpacity className="h-12 w-12 items-center justify-center rounded-full bg-blue-600">
+      <TouchableOpacity className="h-12 w-12 items-center justify-center rounded-full bg-primary">
         <Text className="text-white">➤</Text>
       </TouchableOpacity>
     </View>

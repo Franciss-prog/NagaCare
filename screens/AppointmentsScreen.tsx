@@ -23,7 +23,7 @@ export default function AppointmentsScreen() {
           </View>
         ))}
 
-        <TouchableOpacity className="mt-4 items-center rounded-xl bg-blue-600 py-3">
+        <TouchableOpacity className="mt-4 items-center rounded-xl bg-primary py-3">
           <Text className="text-white">Book Appointment</Text>
         </TouchableOpacity>
       </ScrollView>
