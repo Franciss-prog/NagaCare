@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   Wrench,
   ChevronUp,
+  ChevronDown,
 } from 'lucide-react-native';
 
 interface MenuItem {
@@ -26,8 +27,10 @@ const menuItemsConfig: MenuItem[] = [
   { label: 'Services', icon: <Briefcase size={24} color="white" /> },
   { label: 'Emergency', icon: <AlertTriangle size={24} color="white" /> },
   { label: 'Utilities', icon: <Wrench size={24} color="white" /> },
-  { label: 'View Less', icon: <ChevronUp size={24} color="white" /> },
 ];
+
+// Essential items to show when collapsed
+const essentialItems = ['Health Map', 'AI Health Assistant', 'Emergency', 'Appointments'];
 
 const MenuItem = ({ item }: { item: MenuItem }) => {
   const navigation = useNavigation<any>();
@@ -51,9 +54,20 @@ const MenuItem = ({ item }: { item: MenuItem }) => {
 };
 
 export default function GridMenu({ items }: { items?: string[] }) {
-  const displayItems = items
-    ? menuItemsConfig.filter((m) => items.includes(m.label))
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const filteredItems = items 
+    ? menuItemsConfig.filter((m) => items.includes(m.label)) 
     : menuItemsConfig;
+
+  const displayItems = isExpanded 
+    ? filteredItems 
+    : filteredItems.filter((m) => essentialItems.includes(m.label));
+
+  const toggleButton = {
+    label: isExpanded ? 'View Less' : 'View More',
+    icon: isExpanded ? <ChevronUp size={24} color="white" /> : <ChevronDown size={24} color="white" />,
+  };
 
   return (
     <View className="-m-2 flex-row flex-wrap px-2">
@@ -62,6 +76,16 @@ export default function GridMenu({ items }: { items?: string[] }) {
           <MenuItem item={item} />
         </View>
       ))}
+      <View style={{ width: '48%' }}>
+        <TouchableOpacity
+          className="m-2 flex-1 items-center rounded-xl bg-slate-900 p-3"
+          onPress={() => setIsExpanded(!isExpanded)}>
+          <View className="mb-2 h-12 w-12 items-center justify-center rounded-full bg-secondary/30">
+            {toggleButton.icon}
+          </View>
+          <Text className="text-sm text-slate-200">{toggleButton.label}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
