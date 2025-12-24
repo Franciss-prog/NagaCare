@@ -44,7 +44,7 @@ export default function RootNavigator() {
         component={HomeStackNavigator}
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => <Home size={24} color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <Home size={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -52,7 +52,7 @@ export default function RootNavigator() {
         component={ServicesScreen}
         options={{
           tabBarLabel: 'Services',
-          tabBarIcon: ({ color }) => <Briefcase size={24} color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <Briefcase size={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -60,7 +60,7 @@ export default function RootNavigator() {
         component={NewsScreen}
         options={{
           tabBarLabel: 'News',
-          tabBarIcon: ({ color }) => <Newspaper size={24} color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <Newspaper size={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -68,7 +68,7 @@ export default function RootNavigator() {
         component={EmergencyScreen}
         options={{
           tabBarLabel: 'Emergency',
-          tabBarIcon: ({ color }) => <AlertCircle size={24} color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <AlertCircle size={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -76,7 +76,7 @@ export default function RootNavigator() {
         component={AccountScreen}
         options={{
           tabBarLabel: 'Account',
-          tabBarIcon: ({ color }) => <User size={24} color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <User size={24} color={color} />,
         }}
       />
     </Tab.Navigator>
