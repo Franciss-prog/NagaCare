@@ -18,9 +18,10 @@ export default function ChatInput({ placeholder, onSend, disabled }: ChatInputPr
   };
 
   return (
-    <View className="absolute bottom-0 left-0 right-0 flex-row items-center border-t border-slate-800 bg-slate-900 p-3">
+    <View className="flex-row items-center border-t border-slate-700 bg-slate-900 px-3 py-3 shadow-2xl" style={{ margin: 0 }}>
       <TextInput
-        className="mr-3 flex-1 rounded-full bg-slate-800 px-4 py-2 text-white"
+        className="mr-3 flex-1 rounded-full bg-slate-800 px-4 py-2"
+        style={{ color: '#ffffff' }}
         placeholder={placeholder || 'Type a message'}
         placeholderTextColor="#9CA3AF"
         value={message}

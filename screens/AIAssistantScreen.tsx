@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, ScrollView, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, ScrollView, ActivityIndicator, Text, TouchableOpacity, Keyboard, Platform } from 'react-native';
 import Header from '../components/Header';
 import { ChatBubble } from '../components/ChatBubble';
 import ChatInput from '../components/ChatInput';
@@ -8,6 +8,7 @@ import { aramonAI, Message } from '../services/aramonAI';
 export default function AIAssistantScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Initial greeting
@@ -19,6 +20,28 @@ export default function AIAssistantScreen() {
       timestamp: new Date(),
     };
     setMessages([greetingMessage]);
+  }, []);
+
+  // Keyboard event listeners
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+      }
+    );
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
   }, []);
 
   // Auto-scroll to bottom when new messages arrive
@@ -144,8 +167,10 @@ export default function AIAssistantScreen() {
       {/* Chat Messages */}
       <ScrollView
         ref={scrollViewRef}
-        contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 80 + keyboardHeight }}
         showsVerticalScrollIndicator={false}
+        className="flex-1"
+        keyboardShouldPersistTaps="handled"
       >
         {messages.map((message) => (
           <ChatBubble
@@ -165,12 +190,14 @@ export default function AIAssistantScreen() {
         )}
       </ScrollView>
 
-      {/* Chat Input */}
-      <ChatInput
-        placeholder="Ask about health, symptoms, or facilities..."
-        onSend={handleSendMessage}
-        disabled={isLoading}
-      />
+      {/* Chat Input - positioned absolutely at bottom */}
+      <View style={{ position: 'absolute', bottom: keyboardHeight, left: 0, right: 0, elevation: 10, zIndex: 10, margin: 0, padding: 0 }}>
+        <ChatInput
+          placeholder="Ask about health, symptoms, or facilities..."
+          onSend={handleSendMessage}
+          disabled={isLoading}
+        />
+      </View>
     </View>
   );
 }

@@ -1,8 +1,9 @@
 import Groq from "groq-sdk";
+import { GROQ_API_KEY } from "@env";
 
-// Initialize Groq client
+// Initialize Groq client with API key from .env
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || "your_groq_api_key_here",
+  apiKey: GROQ_API_KEY,
   dangerouslyAllowBrowser: true, // Enable for React Native
 });
 
@@ -14,7 +15,7 @@ export interface Message {
 }
 
 // Aramon AI System Prompt based on the image specifications
-const ARAMON_SYSTEM_PROMPT = `You are Aramon AI, an integrated conversational AI health assistant designed for community health support in Naga City. Your role is to:
+const ARAMON_SYSTEM_PROMPT = `You are Aramon AI, an integrated conversational AI health assistant designed for community health support in Naga City Bicol , The Philippines. Your role is to:
 
 1. **Answer basic health inquiries** about:
    - Symptoms and their possible causes
