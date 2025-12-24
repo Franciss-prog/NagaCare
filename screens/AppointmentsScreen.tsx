@@ -556,7 +556,7 @@ const ReviewBookingScreen = ({
         </Card>
 
         {/* Appointment Details Card */}
-        <Card title="Appointment Details" children>
+        <Card title="Appointment Details">
           <View className="space-y-3">
             <View className="flex-row items-center justify-between rounded-lg bg-slate-800 px-3 py-2">
               <View className="flex-row items-center gap-2">
