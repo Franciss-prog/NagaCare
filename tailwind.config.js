@@ -11,9 +11,9 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#FF6B35',
-        secondary: '#A78BFA',
-        accent: '#FCD34D',
+        primary: '#ff4930',      // NagaCare coral red
+        secondary: '#643fb3',    // NagaCare purple
+        accent: '#fccb10',       // NagaCare yellow
       },
     },
   },

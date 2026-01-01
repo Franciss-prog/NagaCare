@@ -22,6 +22,7 @@ import {
   User,
   Phone,
   AlertCircle,
+  HelpCircle,
 } from 'lucide-react-native';
 import Header from '../components/Header';
 import Card from '../components/Card';
@@ -849,67 +850,109 @@ export default function AppointmentsScreen() {
         {/* Section: Upcoming Appointments */}
         {MOCK_EXISTING_APPOINTMENTS.length > 0 && (
           <>
-            <Text className="mb-3 text-sm font-semibold text-white">Upcoming Appointments</Text>
+            <Text className="mb-3 text-lg font-bold text-white">Upcoming Appointments</Text>
             {MOCK_EXISTING_APPOINTMENTS.map((appointment) => (
-              <View key={appointment.date} className="mb-3">
+              <TouchableOpacity key={appointment.date} className="mb-3" activeOpacity={0.7}>
                 <Card>
-                  <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center gap-4">
+                    <View className="h-16 w-16 items-center justify-center rounded-2xl bg-purple-600/20">
+                      <Calendar size={32} color="#643fb3" />
+                    </View>
                     <View className="flex-1">
-                      <Text className="font-semibold text-white">{appointment.facility}</Text>
-                      <Text className="mt-1 text-xs text-slate-400">
-                        📅{' '}
+                      <Text className="text-lg font-semibold text-white">{appointment.facility}</Text>
+                      <Text className="mt-1 text-sm text-slate-400">
                         {new Date(appointment.date).toLocaleDateString('en-US', {
+                          weekday: 'long',
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
                         })}
                       </Text>
-                    </View>
-                    <View
-                      className={`rounded-full px-3 py-1 ${
-                        appointment.status === 'Confirmed' ? 'bg-green-500/20' : 'bg-yellow-500/20'
-                      }`}>
-                      <Text
-                        className={`text-xs font-medium ${
-                          appointment.status === 'Confirmed' ? 'text-green-400' : 'text-yellow-400'
-                        }`}>
-                        {appointment.status}
-                      </Text>
+                      <View className="mt-2">
+                        <View
+                          className={`self-start rounded-full px-3 py-1 ${
+                            appointment.status === 'Confirmed' ? 'bg-green-500/20' : 'bg-yellow-500/20'
+                          }`}>
+                          <Text
+                            className={`text-xs font-semibold ${
+                              appointment.status === 'Confirmed' ? 'text-green-400' : 'text-yellow-400'
+                            }`}>
+                            ✓ {appointment.status}
+                          </Text>
+                        </View>
+                      </View>
                     </View>
                   </View>
                 </Card>
-              </View>
+              </TouchableOpacity>
             ))}
           </>
         )}
 
-        {/* Empty State or Call to Action */}
-        <View className="mt-6 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 px-4 py-6">
-          <Text className="text-center text-sm font-semibold text-white">
-            Ready to schedule an appointment?
-          </Text>
-          <Text className="mt-2 text-center text-xs text-slate-400">
-            Book a consultation with any of our partner health facilities
-          </Text>
-        </View>
-
         {/* Book Appointment Button */}
         <TouchableOpacity
           onPress={handleStartBooking}
-          activeOpacity={0.7}
-          className="mt-4 items-center rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 py-4">
-          <Text className="text-base font-semibold text-white">Book an Appointment</Text>
+          activeOpacity={0.8}
+          className="my-6 overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 to-purple-800 p-6"
+          style={{
+            backgroundColor: '#643fb3',
+            shadowColor: '#643fb3',
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.3,
+            shadowRadius: 12,
+            elevation: 8,
+          }}>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1">
+              <Text className="text-xl font-bold text-white">Book New Appointment</Text>
+              <Text className="mt-1 text-sm text-purple-100">
+                Schedule a visit with our partner facilities
+              </Text>
+            </View>
+            <View className="h-14 w-14 items-center justify-center rounded-full bg-white/20">
+              <Text className="text-2xl">+</Text>
+            </View>
+          </View>
         </TouchableOpacity>
 
-        {/* Info Section */}
-        <View className="mt-6 rounded-lg bg-slate-800/50 px-4 py-3">
-          <Text className="text-xs font-medium text-slate-300">ℹ️ About Our Service</Text>
-          <Text className="mt-2 text-xs text-slate-400">
-            • Connect with certified health facilities across Naga City{'\n'}• Real-time
-            availability and instant confirmation{'\n'}• Easy rescheduling and cancellation{'\n'}•
-            Secure patient data handling
-          </Text>
+        {/* Quick Stats */}
+        <View className="mb-6 flex-row gap-3">
+          <View className="flex-1 rounded-2xl bg-slate-800 p-4">
+            <MapPin size={24} color="#ff4930" />
+            <Text className="mt-2 text-2xl font-bold text-white">15</Text>
+            <Text className="text-sm text-slate-400">Facilities</Text>
+          </View>
+          <View className="flex-1 rounded-2xl bg-slate-800 p-4">
+            <Calendar size={24} color="#643fb3" />
+            <Text className="mt-2 text-2xl font-bold text-white">{MOCK_EXISTING_APPOINTMENTS.length}</Text>
+            <Text className="text-sm text-slate-400">Appointments</Text>
+          </View>
+          <View className="flex-1 rounded-2xl bg-slate-800 p-4">
+            <Clock size={24} color="#fccb10" />
+            <Text className="mt-2 text-2xl font-bold text-white">24h</Text>
+            <Text className="text-sm text-slate-400">Support</Text>
+          </View>
         </View>
+
+        {/* Info Section */}
+        <Card>
+          <View className="gap-3">
+            <View className="flex-row items-start gap-3">
+              <View className="h-10 w-10 items-center justify-center rounded-full bg-blue-600/20">
+                <HelpCircle size={24} color="#3b82f6" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-semibold text-white">How it works</Text>
+                <Text className="mt-1 text-sm leading-5 text-slate-400">
+                  • Choose your preferred health facility{'\n'}
+                  • Select date and time slot{'\n'}
+                  • Fill in your details{'\n'}
+                  • Get instant confirmation
+                </Text>
+              </View>
+            </View>
+          </View>
+        </Card>
       </ScrollView>
     </View>
   );
