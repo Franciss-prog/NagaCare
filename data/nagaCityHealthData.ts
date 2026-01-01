@@ -19,6 +19,24 @@ export interface BarangayHealthData {
     totalPregnant: number;
     enrollmentRate: number; // percentage
     prenatalVisitCompliance: number; // percentage
+    trimesterBreakdown: {
+      firstTrimester: number;
+      secondTrimester: number;
+      thirdTrimester: number;
+    };
+    scheduledCheckups: number;
+    completedCheckups: number;
+  };
+  seniorCitizen: {
+    total: number;
+    receivingAssistance: number;
+    assistanceTypes: {
+      medicines: number;
+      consultations: number;
+      financialAid: number;
+      homeVisits: number;
+    };
+    coverageRate: number; // percentage
   };
   population: number;
 }
@@ -43,6 +61,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 42,
       enrollmentRate: 90,
       prenatalVisitCompliance: 85,
+      trimesterBreakdown: {
+        firstTrimester: 12,
+        secondTrimester: 15,
+        thirdTrimester: 11,
+      },
+      scheduledCheckups: 152,
+      completedCheckups: 129,
+    },
+    seniorCitizen: {
+      total: 285,
+      receivingAssistance: 215,
+      assistanceTypes: {
+        medicines: 180,
+        consultations: 150,
+        financialAid: 95,
+        homeVisits: 65,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -61,6 +97,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 52,
       enrollmentRate: 87,
       prenatalVisitCompliance: 82,
+      trimesterBreakdown: {
+        firstTrimester: 16,
+        secondTrimester: 18,
+        thirdTrimester: 11,
+      },
+      scheduledCheckups: 180,
+      completedCheckups: 148,
+    },
+    seniorCitizen: {
+      total: 365,
+      receivingAssistance: 260,
+      assistanceTypes: {
+        medicines: 210,
+        consultations: 180,
+        financialAid: 115,
+        homeVisits: 75,
+      },
+      coverageRate: 71,
     },
   },
   {
@@ -79,6 +133,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 49,
       enrollmentRate: 90,
       prenatalVisitCompliance: 86,
+      trimesterBreakdown: {
+        firstTrimester: 14,
+        secondTrimester: 17,
+        thirdTrimester: 13,
+      },
+      scheduledCheckups: 176,
+      completedCheckups: 151,
+    },
+    seniorCitizen: {
+      total: 345,
+      receivingAssistance: 278,
+      assistanceTypes: {
+        medicines: 230,
+        consultations: 195,
+        financialAid: 125,
+        homeVisits: 82,
+      },
+      coverageRate: 81,
     },
   },
   {
@@ -97,6 +169,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 35,
       enrollmentRate: 91,
       prenatalVisitCompliance: 89,
+      trimesterBreakdown: {
+        firstTrimester: 10,
+        secondTrimester: 13,
+        thirdTrimester: 9,
+      },
+      scheduledCheckups: 128,
+      completedCheckups: 114,
+    },
+    seniorCitizen: {
+      total: 255,
+      receivingAssistance: 220,
+      assistanceTypes: {
+        medicines: 195,
+        consultations: 165,
+        financialAid: 105,
+        homeVisits: 68,
+      },
+      coverageRate: 86,
     },
   },
   {
@@ -115,6 +205,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 29,
       enrollmentRate: 90,
       prenatalVisitCompliance: 88,
+      trimesterBreakdown: {
+        firstTrimester: 6,
+        secondTrimester: 10,
+        thirdTrimester: 13,
+      },
+      scheduledCheckups: 116,
+      completedCheckups: 95,
+    },
+    seniorCitizen: {
+      total: 245,
+      receivingAssistance: 185,
+      assistanceTypes: {
+        medicines: 150,
+        consultations: 130,
+        financialAid: 80,
+        homeVisits: 55,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -133,6 +241,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 68,
       enrollmentRate: 88,
       prenatalVisitCompliance: 84,
+      trimesterBreakdown: {
+        firstTrimester: 22,
+        secondTrimester: 27,
+        thirdTrimester: 19,
+      },
+      scheduledCheckups: 272,
+      completedCheckups: 234,
+    },
+    seniorCitizen: {
+      total: 510,
+      receivingAssistance: 385,
+      assistanceTypes: {
+        medicines: 320,
+        consultations: 280,
+        financialAid: 170,
+        homeVisits: 115,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -151,6 +277,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 65,
       enrollmentRate: 89,
       prenatalVisitCompliance: 87,
+      trimesterBreakdown: {
+        firstTrimester: 17,
+        secondTrimester: 27,
+        thirdTrimester: 21,
+      },
+      scheduledCheckups: 260,
+      completedCheckups: 226,
+    },
+    seniorCitizen: {
+      total: 470,
+      receivingAssistance: 355,
+      assistanceTypes: {
+        medicines: 295,
+        consultations: 260,
+        financialAid: 155,
+        homeVisits: 105,
+      },
+      coverageRate: 76,
     },
   },
   {
@@ -169,6 +313,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 82,
       enrollmentRate: 88,
       prenatalVisitCompliance: 81,
+      trimesterBreakdown: {
+        firstTrimester: 22,
+        secondTrimester: 30,
+        thirdTrimester: 30,
+      },
+      scheduledCheckups: 328,
+      completedCheckups: 280,
+    },
+    seniorCitizen: {
+      total: 685,
+      receivingAssistance: 515,
+      assistanceTypes: {
+        medicines: 430,
+        consultations: 375,
+        financialAid: 225,
+        homeVisits: 155,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -187,6 +349,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 78,
       enrollmentRate: 87,
       prenatalVisitCompliance: 80,
+      trimesterBreakdown: {
+        firstTrimester: 24,
+        secondTrimester: 32,
+        thirdTrimester: 22,
+      },
+      scheduledCheckups: 312,
+      completedCheckups: 268,
+    },
+    seniorCitizen: {
+      total: 570,
+      receivingAssistance: 430,
+      assistanceTypes: {
+        medicines: 360,
+        consultations: 315,
+        financialAid: 190,
+        homeVisits: 130,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -205,6 +385,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 24,
       enrollmentRate: 92,
       prenatalVisitCompliance: 90,
+      trimesterBreakdown: {
+        firstTrimester: 9,
+        secondTrimester: 10,
+        thirdTrimester: 5,
+      },
+      scheduledCheckups: 96,
+      completedCheckups: 82,
+    },
+    seniorCitizen: {
+      total: 165,
+      receivingAssistance: 125,
+      assistanceTypes: {
+        medicines: 105,
+        consultations: 90,
+        financialAid: 50,
+        homeVisits: 35,
+      },
+      coverageRate: 76,
     },
   },
   {
@@ -223,6 +421,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 40,
       enrollmentRate: 90,
       prenatalVisitCompliance: 85,
+      trimesterBreakdown: {
+        firstTrimester: 10,
+        secondTrimester: 17,
+        thirdTrimester: 13,
+      },
+      scheduledCheckups: 160,
+      completedCheckups: 139,
+    },
+    seniorCitizen: {
+      total: 280,
+      receivingAssistance: 210,
+      assistanceTypes: {
+        medicines: 175,
+        consultations: 155,
+        financialAid: 90,
+        homeVisits: 60,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -241,6 +457,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 46,
       enrollmentRate: 91,
       prenatalVisitCompliance: 88,
+      trimesterBreakdown: {
+        firstTrimester: 14,
+        secondTrimester: 19,
+        thirdTrimester: 13,
+      },
+      scheduledCheckups: 184,
+      completedCheckups: 161,
+    },
+    seniorCitizen: {
+      total: 340,
+      receivingAssistance: 255,
+      assistanceTypes: {
+        medicines: 215,
+        consultations: 185,
+        financialAid: 110,
+        homeVisits: 75,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -259,6 +493,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 31,
       enrollmentRate: 90,
       prenatalVisitCompliance: 86,
+      trimesterBreakdown: {
+        firstTrimester: 9,
+        secondTrimester: 10,
+        thirdTrimester: 12,
+      },
+      scheduledCheckups: 124,
+      completedCheckups: 110,
+    },
+    seniorCitizen: {
+      total: 240,
+      receivingAssistance: 180,
+      assistanceTypes: {
+        medicines: 150,
+        consultations: 130,
+        financialAid: 75,
+        homeVisits: 50,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -277,6 +529,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 58,
       enrollmentRate: 88,
       prenatalVisitCompliance: 84,
+      trimesterBreakdown: {
+        firstTrimester: 16,
+        secondTrimester: 22,
+        thirdTrimester: 20,
+      },
+      scheduledCheckups: 232,
+      completedCheckups: 199,
+    },
+    seniorCitizen: {
+      total: 410,
+      receivingAssistance: 310,
+      assistanceTypes: {
+        medicines: 260,
+        consultations: 225,
+        financialAid: 130,
+        homeVisits: 90,
+      },
+      coverageRate: 76,
     },
   },
   {
@@ -295,6 +565,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 40,
       enrollmentRate: 88,
       prenatalVisitCompliance: 83,
+      trimesterBreakdown: {
+        firstTrimester: 11,
+        secondTrimester: 17,
+        thirdTrimester: 12,
+      },
+      scheduledCheckups: 160,
+      completedCheckups: 131,
+    },
+    seniorCitizen: {
+      total: 280,
+      receivingAssistance: 210,
+      assistanceTypes: {
+        medicines: 175,
+        consultations: 155,
+        financialAid: 90,
+        homeVisits: 60,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -313,6 +601,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 74,
       enrollmentRate: 86,
       prenatalVisitCompliance: 80,
+      trimesterBreakdown: {
+        firstTrimester: 24,
+        secondTrimester: 29,
+        thirdTrimester: 21,
+      },
+      scheduledCheckups: 296,
+      completedCheckups: 250,
+    },
+    seniorCitizen: {
+      total: 560,
+      receivingAssistance: 420,
+      assistanceTypes: {
+        medicines: 350,
+        consultations: 305,
+        financialAid: 180,
+        homeVisits: 125,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -331,6 +637,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 108,
       enrollmentRate: 85,
       prenatalVisitCompliance: 77,
+      trimesterBreakdown: {
+        firstTrimester: 33,
+        secondTrimester: 41,
+        thirdTrimester: 34,
+      },
+      scheduledCheckups: 432,
+      completedCheckups: 364,
+    },
+    seniorCitizen: {
+      total: 885,
+      receivingAssistance: 665,
+      assistanceTypes: {
+        medicines: 560,
+        consultations: 485,
+        financialAid: 285,
+        homeVisits: 195,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -349,6 +673,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 52,
       enrollmentRate: 88,
       prenatalVisitCompliance: 84,
+      trimesterBreakdown: {
+        firstTrimester: 17,
+        secondTrimester: 18,
+        thirdTrimester: 17,
+      },
+      scheduledCheckups: 208,
+      completedCheckups: 175,
+    },
+    seniorCitizen: {
+      total: 370,
+      receivingAssistance: 280,
+      assistanceTypes: {
+        medicines: 235,
+        consultations: 205,
+        financialAid: 120,
+        homeVisits: 80,
+      },
+      coverageRate: 76,
     },
   },
   {
@@ -367,6 +709,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 88,
       enrollmentRate: 89,
       prenatalVisitCompliance: 86,
+      trimesterBreakdown: {
+        firstTrimester: 27,
+        secondTrimester: 33,
+        thirdTrimester: 28,
+      },
+      scheduledCheckups: 352,
+      completedCheckups: 296,
+    },
+    seniorCitizen: {
+      total: 570,
+      receivingAssistance: 430,
+      assistanceTypes: {
+        medicines: 360,
+        consultations: 315,
+        financialAid: 190,
+        homeVisits: 130,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -385,6 +745,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 54,
       enrollmentRate: 89,
       prenatalVisitCompliance: 85,
+      trimesterBreakdown: {
+        firstTrimester: 16,
+        secondTrimester: 23,
+        thirdTrimester: 15,
+      },
+      scheduledCheckups: 216,
+      completedCheckups: 187,
+    },
+    seniorCitizen: {
+      total: 390,
+      receivingAssistance: 295,
+      assistanceTypes: {
+        medicines: 245,
+        consultations: 215,
+        financialAid: 125,
+        homeVisits: 85,
+      },
+      coverageRate: 76,
     },
   },
   {
@@ -403,6 +781,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 44,
       enrollmentRate: 91,
       prenatalVisitCompliance: 87,
+      trimesterBreakdown: {
+        firstTrimester: 11,
+        secondTrimester: 17,
+        thirdTrimester: 16,
+      },
+      scheduledCheckups: 176,
+      completedCheckups: 152,
+    },
+    seniorCitizen: {
+      total: 320,
+      receivingAssistance: 240,
+      assistanceTypes: {
+        medicines: 200,
+        consultations: 175,
+        financialAid: 100,
+        homeVisits: 70,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -421,6 +817,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 66,
       enrollmentRate: 88,
       prenatalVisitCompliance: 83,
+      trimesterBreakdown: {
+        firstTrimester: 17,
+        secondTrimester: 25,
+        thirdTrimester: 24,
+      },
+      scheduledCheckups: 264,
+      completedCheckups: 223,
+    },
+    seniorCitizen: {
+      total: 490,
+      receivingAssistance: 370,
+      assistanceTypes: {
+        medicines: 310,
+        consultations: 270,
+        financialAid: 155,
+        homeVisits: 105,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -439,6 +853,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 38,
       enrollmentRate: 89,
       prenatalVisitCompliance: 83,
+      trimesterBreakdown: {
+        firstTrimester: 10,
+        secondTrimester: 17,
+        thirdTrimester: 11,
+      },
+      scheduledCheckups: 152,
+      completedCheckups: 127,
+    },
+    seniorCitizen: {
+      total: 265,
+      receivingAssistance: 200,
+      assistanceTypes: {
+        medicines: 165,
+        consultations: 145,
+        financialAid: 85,
+        homeVisits: 60,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -457,6 +889,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 63,
       enrollmentRate: 87,
       prenatalVisitCompliance: 82,
+      trimesterBreakdown: {
+        firstTrimester: 17,
+        secondTrimester: 27,
+        thirdTrimester: 19,
+      },
+      scheduledCheckups: 252,
+      completedCheckups: 212,
+    },
+    seniorCitizen: {
+      total: 440,
+      receivingAssistance: 330,
+      assistanceTypes: {
+        medicines: 275,
+        consultations: 240,
+        financialAid: 140,
+        homeVisits: 95,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -475,6 +925,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 42,
       enrollmentRate: 90,
       prenatalVisitCompliance: 87,
+      trimesterBreakdown: {
+        firstTrimester: 13,
+        secondTrimester: 17,
+        thirdTrimester: 12,
+      },
+      scheduledCheckups: 168,
+      completedCheckups: 141,
+    },
+    seniorCitizen: {
+      total: 300,
+      receivingAssistance: 225,
+      assistanceTypes: {
+        medicines: 190,
+        consultations: 165,
+        financialAid: 95,
+        homeVisits: 65,
+      },
+      coverageRate: 75,
     },
   },
   {
@@ -493,6 +961,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 35,
       enrollmentRate: 91,
       prenatalVisitCompliance: 88,
+      trimesterBreakdown: {
+        firstTrimester: 8,
+        secondTrimester: 13,
+        thirdTrimester: 14,
+      },
+      scheduledCheckups: 140,
+      completedCheckups: 116,
+    },
+    seniorCitizen: {
+      total: 250,
+      receivingAssistance: 190,
+      assistanceTypes: {
+        medicines: 155,
+        consultations: 140,
+        financialAid: 80,
+        homeVisits: 55,
+      },
+      coverageRate: 76,
     },
   },
   {
@@ -511,6 +997,24 @@ export const nagaCityHealthData: BarangayHealthData[] = [
       totalPregnant: 96,
       enrollmentRate: 85,
       prenatalVisitCompliance: 78,
+      trimesterBreakdown: {
+        firstTrimester: 30,
+        secondTrimester: 37,
+        thirdTrimester: 29,
+      },
+      scheduledCheckups: 384,
+      completedCheckups: 327,
+    },
+    seniorCitizen: {
+      total: 730,
+      receivingAssistance: 550,
+      assistanceTypes: {
+        medicines: 460,
+        consultations: 400,
+        financialAid: 235,
+        homeVisits: 160,
+      },
+      coverageRate: 75,
     },
   },
 ];
