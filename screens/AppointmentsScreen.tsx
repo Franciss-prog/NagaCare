@@ -666,7 +666,7 @@ const SuccessScreen = ({ booking, onDone }: { booking: BookingData; onDone: () =
           </Text>
 
           {/* Appointment Summary */}
-          <Card children>
+          <Card>
             <View className="mt-6 space-y-4">
               <View className="rounded-lg bg-slate-800 p-3">
                 <Text className="text-xs font-medium text-slate-400">FACILITY</Text>
