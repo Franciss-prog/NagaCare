@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
@@ -6,31 +6,43 @@ import {
   Building2,
   Brain,
   Calendar,
-  Briefcase,
   AlertTriangle,
-  Wrench,
-  ChevronUp,
-  ChevronDown,
 } from 'lucide-react-native';
 
 interface MenuItem {
   label: string;
   icon: React.ReactNode;
   screen?: string;
+  tab?: string;
+  gradient: string[];
 }
 
 const menuItemsConfig: MenuItem[] = [
-  { label: 'Health Map', icon: <MapPin size={24} color="white" />, screen: 'HealthMap' },
-  { label: 'Health Facilities', icon: <Building2 size={24} color="white" />, screen: 'Facilities' },
-  { label: 'AI Health Assistant', icon: <Brain size={24} color="white" />, screen: 'AIAssistant' },
-  { label: 'Appointments', icon: <Calendar size={24} color="white" />, screen: 'Appointments' },
-  { label: 'Services', icon: <Briefcase size={24} color="white" /> },
-  { label: 'Emergency', icon: <AlertTriangle size={24} color="white" /> },
-  { label: 'Utilities', icon: <Wrench size={24} color="white" /> },
+  { 
+    label: 'Health Map', 
+    icon: <MapPin size={28} color="white" />, 
+    screen: 'HealthMap',
+    gradient: ['#643fb3', '#5533a0']
+  },
+  { 
+    label: 'Health Facilities', 
+    icon: <Building2 size={28} color="white" />, 
+    screen: 'Facilities',
+    gradient: ['#ff4930', '#e63820']
+  },
+  { 
+    label: 'AI Assistant', 
+    icon: <Brain size={28} color="white" />, 
+    screen: 'AIAssistant',
+    gradient: ['#fccb10', '#e6b600']
+  },
+  { 
+    label: 'Appointments', 
+    icon: <Calendar size={28} color="white" />, 
+    screen: 'Appointments',
+    gradient: ['#643fb3', '#5533a0']
+  },
 ];
-
-// Essential items to show when collapsed
-const essentialItems = ['Health Map', 'AI Health Assistant', 'Emergency', 'Appointments'];
 
 const MenuItem = ({ item }: { item: MenuItem }) => {
   const navigation = useNavigation<any>();
@@ -38,54 +50,50 @@ const MenuItem = ({ item }: { item: MenuItem }) => {
   const handlePress = () => {
     if (item.screen) {
       navigation.navigate(item.screen);
+    } else if (item.tab) {
+      navigation.navigate(item.tab);
     }
   };
 
   return (
     <TouchableOpacity
-      className="m-2 flex-1 items-center rounded-xl bg-slate-900 p-3"
-      onPress={handlePress}>
-      <View className="mb-2 h-12 w-12 items-center justify-center rounded-full bg-secondary/30">
-        {item.icon}
+      className="m-1.5 flex-1 overflow-hidden rounded-2xl bg-gradient-to-br shadow-lg"
+      style={{ 
+        backgroundColor: item.gradient[0],
+        minHeight: 120,
+        shadowColor: item.gradient[0],
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
+      }}
+      onPress={handlePress}
+      activeOpacity={0.8}
+    >
+      <View className="flex-1 items-center justify-center p-4">
+        <View className="mb-3 items-center justify-center">
+          {item.icon}
+        </View>
+        <Text className="text-center text-sm font-semibold text-white" numberOfLines={2}>
+          {item.label}
+        </Text>
       </View>
-      <Text className="text-sm text-slate-200">{item.label}</Text>
     </TouchableOpacity>
   );
 };
 
 export default function GridMenu({ items }: { items?: string[] }) {
-  const [isExpanded, setIsExpanded] = useState(true);
-
   const filteredItems = items 
     ? menuItemsConfig.filter((m) => items.includes(m.label)) 
     : menuItemsConfig;
 
-  const displayItems = isExpanded 
-    ? filteredItems 
-    : filteredItems.filter((m) => essentialItems.includes(m.label));
-
-  const toggleButton = {
-    label: isExpanded ? 'View Less' : 'View More',
-    icon: isExpanded ? <ChevronUp size={24} color="white" /> : <ChevronDown size={24} color="white" />,
-  };
-
   return (
-    <View className="-m-2 flex-row flex-wrap px-2">
-      {displayItems.map((item) => (
-        <View key={item.label} style={{ width: '48%' }}>
+    <View className="flex-row flex-wrap">
+      {filteredItems.map((item) => (
+        <View key={item.label} style={{ width: '50%' }}>
           <MenuItem item={item} />
         </View>
       ))}
-      <View style={{ width: '48%' }}>
-        <TouchableOpacity
-          className="m-2 flex-1 items-center rounded-xl bg-slate-900 p-3"
-          onPress={() => setIsExpanded(!isExpanded)}>
-          <View className="mb-2 h-12 w-12 items-center justify-center rounded-full bg-secondary/30">
-            {toggleButton.icon}
-          </View>
-          <Text className="text-sm text-slate-200">{toggleButton.label}</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }

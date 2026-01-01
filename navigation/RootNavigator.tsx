@@ -1,15 +1,13 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Home, Briefcase, Newspaper, AlertCircle, User } from 'lucide-react-native';
+import { Home, AlertCircle, User } from 'lucide-react-native';
 import HomeScreen from '../screens/HomeScreen';
 import HealthMapScreen from '../screens/HealthMapScreen';
 import FacilitiesScreen from '../screens/FacilitiesScreen';
 import AIAssistantScreen from '../screens/AIAssistantScreen';
 import AppointmentsScreen from '../screens/AppointmentsScreen';
 import EmergencyScreen from '../screens/EmergencyScreen';
-import NewsScreen from '../screens/NewsScreen';
-import ServicesScreen from '../screens/ServicesScreen';
 import AccountScreen from '../screens/AccountScreen';
 
 const Tab = createBottomTabNavigator();
@@ -32,7 +30,7 @@ export default function RootNavigator() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#FF6B35',
+        tabBarActiveTintColor: '#ff4930',
         tabBarInactiveTintColor: '#94a3b8',
         tabBarStyle: {
           backgroundColor: '#0b1220',
@@ -45,22 +43,6 @@ export default function RootNavigator() {
         options={{
           tabBarLabel: 'Home',
           tabBarIcon: ({ color }: { color: string }) => <Home size={24} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Services"
-        component={ServicesScreen}
-        options={{
-          tabBarLabel: 'Services',
-          tabBarIcon: ({ color }: { color: string }) => <Briefcase size={24} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="News"
-        component={NewsScreen}
-        options={{
-          tabBarLabel: 'News',
-          tabBarIcon: ({ color }: { color: string }) => <Newspaper size={24} color={color} />,
         }}
       />
       <Tab.Screen
