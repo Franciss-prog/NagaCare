@@ -18,7 +18,7 @@ export interface BarangayHealthData {
     pregnantEnrolled: number;
     totalPregnant: number;
     enrollmentRate: number; // percentage
-    prenatalVisitCompliance: number; // percentage
+    prenatalVisitCompliance: number;
     trimesterBreakdown: {
       firstTrimester: number;
       secondTrimester: number;
@@ -41,8 +41,7 @@ export interface BarangayHealthData {
   population: number;
 }
 
-// Naga City center coordinates: 13.6218° N, 123.1948° E
-// Precise coordinates based on verified barangay locations
+
 
 export const nagaCityHealthData: BarangayHealthData[] = [
   {
