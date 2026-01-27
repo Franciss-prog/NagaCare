@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, View, Animated, Modal } from 'react-native';
+import { TouchableOpacity, View, Animated, Modal, Text } from 'react-native';
 import { Bot, X } from 'lucide-react-native';
 import AIAssistantScreen from '../screens/AIAssistantScreen';
 
@@ -85,8 +85,8 @@ export default function FloatingChatBubble() {
                 <Bot size={24} color="white" />
               </View>
               <View>
-                <View className="text-xl font-bold text-white">Aramon AI</View>
-                <View className="text-sm text-slate-400">Your Health Assistant</View>
+                <Text className="text-xl font-bold text-white">Aramon AI</Text>
+                <Text className="text-sm text-slate-400">Your Health Assistant</Text>
               </View>
             </View>
             <TouchableOpacity
