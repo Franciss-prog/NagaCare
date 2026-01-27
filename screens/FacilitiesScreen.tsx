@@ -27,14 +27,8 @@ const FACILITY_ICONS = {
 };
 
 export default function FacilitiesScreen() {
-  const [selectedType, setSelectedType] = useState<FacilityType | 'all'>('all');
   const [selectedFacility, setSelectedFacility] = useState<HealthFacility | null>(null);
   const [showMap, setShowMap] = useState(true);
-
-  const filteredFacilities =
-    selectedType === 'all'
-      ? healthFacilities
-      : healthFacilities.filter((f) => f.type === selectedType);
 
   const openDirections = (facility: HealthFacility) => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${facility.coordinates.latitude},${facility.coordinates.longitude}`;
@@ -49,40 +43,10 @@ export default function FacilitiesScreen() {
     <View className="flex-1 bg-[#0b1220]">
       <Header title="Health Facilities" />
 
-      {/* Filter Chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        className="max-h-16 border-b border-slate-700"
-        contentContainerStyle={{ padding: 12, gap: 8 }}
-      >
-        {(['all', 'hospital', 'health-center', 'clinic', 'pharmacy'] as const).map((type) => (
-          <TouchableOpacity
-            key={type}
-            onPress={() => setSelectedType(type)}
-            className={`rounded-full px-4 py-2 ${
-              selectedType === type ? 'bg-blue-600' : 'bg-slate-800'
-            }`}
-          >
-            <Text className="font-medium text-white">
-              {type === 'all'
-                ? '🌐 All'
-                : type === 'hospital'
-                  ? '🏥 Hospitals'
-                  : type === 'health-center'
-                    ? '⚕️ Health Centers'
-                    : type === 'clinic'
-                      ? '🩺 Clinics'
-                      : '💊 Pharmacies'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
       {/* Map Toggle */}
-      <View className="flex-row items-center justify-between border-b border-slate-700 px-4 py-2">
+      <View className="flex-row items-center justify-between border-b border-slate-700 px-4 py-3">
         <Text className="text-slate-300">
-          {filteredFacilities.length} facilities found
+          {healthFacilities.length} facilities found
         </Text>
         <TouchableOpacity
           onPress={() => setShowMap(!showMap)}
@@ -101,7 +65,7 @@ export default function FacilitiesScreen() {
               style={{ flex: 1 }}
               initialRegion={NAGA_CENTER}
             >
-              {filteredFacilities.map((facility) => (
+              {healthFacilities.map((facility) => (
                 <Marker
                   key={facility.id}
                   coordinate={facility.coordinates}
@@ -154,7 +118,7 @@ export default function FacilitiesScreen() {
 
         {/* All Facilities */}
         <Text className="mb-2 text-lg font-bold text-white">All Facilities</Text>
-        {filteredFacilities.map((facility) => (
+        {healthFacilities.map((facility) => (
           <TouchableOpacity
             key={facility.id}
             onPress={() => setSelectedFacility(facility)}

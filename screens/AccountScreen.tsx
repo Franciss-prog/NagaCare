@@ -1,8 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { User, Settings, Bell, Shield, HelpCircle, LogOut, ChevronRight, Activity, Ruler, Weight } from 'lucide-react-native';
-import Header from '../components/Header';
-import Card from '../components/Card';
+import { User, Settings, Bell, Shield, HelpCircle, LogOut, ChevronRight } from 'lucide-react-native';
 
 const settingsOptions = [
   {
@@ -34,31 +32,36 @@ const settingsOptions = [
 export default function AccountScreen() {
   return (
     <View className="flex-1 bg-[#0b1220]">
-      <Header title="Profile" />
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {/* Profile Card */}
-        <Card>
-          <View className="items-center py-4">
-            <View className="mb-4 h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-purple-800" style={{ backgroundColor: '#643fb3' }}>
-              <User size={48} color="white" />
+      <ScrollView 
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View className="px-6 pt-16 pb-8">
+          <Text className="text-4xl font-bold text-white">Profile</Text>
+        </View>
+
+        {/* Profile Section */}
+        <View className="px-6 mb-8">
+          <View className="items-center rounded-3xl bg-slate-800/50 border border-slate-700/50 p-8">
+            <View className="mb-4 h-24 w-24 items-center justify-center rounded-full" style={{ backgroundColor: '#643fb3' }}>
+              <User size={48} color="white" strokeWidth={2} />
             </View>
             <Text className="text-2xl font-bold text-white">Guest User</Text>
             <Text className="mt-1 text-sm text-slate-400">guest@nagacare.ph</Text>
             
-            <View className="mt-4 flex-row gap-4">
-              <View className="items-center">
+            <View className="mt-6 w-full flex-row gap-4">
+              <View className="flex-1 items-center rounded-2xl bg-slate-700/30 p-4">
                 <Text className="text-2xl font-bold text-white">0</Text>
-                <Text className="text-xs text-slate-400">Appointments</Text>
+                <Text className="text-xs text-slate-400 mt-1">Appointments</Text>
               </View>
-              <View className="h-12 w-px bg-slate-700" />
-              <View className="items-center">
+              <View className="flex-1 items-center rounded-2xl bg-slate-700/30 p-4">
                 <Text className="text-2xl font-bold text-white">3</Text>
-                <Text className="text-xs text-slate-400">Health Records</Text>
+                <Text className="text-xs text-slate-400 mt-1">Records</Text>
               </View>
-              <View className="h-12 w-px bg-slate-700" />
-              <View className="items-center">
+              <View className="flex-1 items-center rounded-2xl bg-slate-700/30 p-4">
                 <Text className="text-2xl font-bold text-white">12</Text>
-                <Text className="text-xs text-slate-400">Checkups</Text>
+                <Text className="text-xs text-slate-400 mt-1">Checkups</Text>
               </View>
             </View>
 
@@ -66,79 +69,79 @@ export default function AccountScreen() {
               <Text className="text-center font-semibold text-white">Edit Profile</Text>
             </TouchableOpacity>
           </View>
-        </Card>
+        </View>
 
         {/* Health Information */}
-        <View className="mt-6">
-          <Text className="mb-3 text-lg font-bold text-white">Health Information</Text>
-          <Card>
-            <View className="gap-3">
+        <View className="px-6 mb-8">
+          <Text className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Health Information</Text>
+          <View className="rounded-3xl bg-slate-800/50 border border-slate-700/50 p-5">
+            <View className="gap-4">
               <View className="flex-row items-center justify-between">
                 <Text className="text-slate-400">Blood Type</Text>
                 <Text className="font-semibold text-white">O+</Text>
               </View>
-              <View className="h-px bg-slate-700" />
+              <View className="h-px bg-slate-700/50" />
               <View className="flex-row items-center justify-between">
                 <Text className="text-slate-400">Height</Text>
                 <Text className="font-semibold text-white">165 cm</Text>
               </View>
-              <View className="h-px bg-slate-700" />
+              <View className="h-px bg-slate-700/50" />
               <View className="flex-row items-center justify-between">
                 <Text className="text-slate-400">Weight</Text>
                 <Text className="font-semibold text-white">62 kg</Text>
               </View>
-              <View className="h-px bg-slate-700" />
+              <View className="h-px bg-slate-700/50" />
               <View className="flex-row items-center justify-between">
                 <Text className="text-slate-400">Allergies</Text>
                 <Text className="font-semibold text-white">None</Text>
               </View>
             </View>
-          </Card>
+          </View>
         </View>
 
         {/* Settings Options */}
-        <View className="mt-6">
-          <Text className="mb-3 text-lg font-bold text-white">Settings</Text>
+        <View className="px-6 mb-8">
+          <Text className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Settings</Text>
           {settingsOptions.map((option, index) => (
-            <TouchableOpacity key={index} className="mb-3" activeOpacity={0.7}>
-              <Card>
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-4">
-                    <View
-                      className="h-12 w-12 items-center justify-center rounded-full"
-                      style={{ backgroundColor: option.color + '20' }}
-                    >
-                      {option.icon}
-                    </View>
-                    <View className="flex-1">
-                      <Text className="font-semibold text-white">{option.title}</Text>
-                      <Text className="text-sm text-slate-400">{option.description}</Text>
-                    </View>
-                  </View>
-                  <ChevronRight size={20} color="#64748b" />
+            <TouchableOpacity 
+              key={index} 
+              className="mb-3 flex-row items-center justify-between rounded-2xl bg-slate-800/50 border border-slate-700/50 p-5" 
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center gap-4">
+                <View
+                  className="h-12 w-12 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: option.color + '20' }}
+                >
+                  {option.icon}
                 </View>
-              </Card>
+                <View className="flex-1">
+                  <Text className="font-semibold text-white">{option.title}</Text>
+                  <Text className="text-sm text-slate-400">{option.description}</Text>
+                </View>
+              </View>
+              <Text className="text-slate-600 text-xl">›</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* App Info */}
-        <View className="mt-6 mb-4">
-          <Card>
-            <View className="items-center py-2">
-              <Text className="text-sm text-slate-400">NagaCare v1.0.0</Text>
-              <Text className="mt-1 text-xs text-slate-500">Data-driven community health</Text>
+        {/* Logout Button */}
+        <View className="px-6 mb-6">
+          <TouchableOpacity className="overflow-hidden rounded-2xl bg-red-900/20 border border-red-800/30 p-4" activeOpacity={0.7}>
+            <View className="flex-row items-center justify-center gap-2">
+              <LogOut size={20} color="#ef4444" />
+              <Text className="font-semibold text-red-400">Sign Out</Text>
             </View>
-          </Card>
+          </TouchableOpacity>
         </View>
 
-        {/* Logout Button */}
-        <TouchableOpacity className="mb-6 overflow-hidden rounded-xl bg-red-900/20 p-4" activeOpacity={0.7}>
-          <View className="flex-row items-center justify-center gap-2">
-            <LogOut size={20} color="#ef4444" />
-            <Text className="font-semibold text-red-400">Sign Out</Text>
+        {/* App Info */}
+        <View className="px-6 mb-6">
+          <View className="items-center py-4">
+            <Text className="text-sm text-slate-500">NagaCare v1.0.0</Text>
+            <Text className="mt-1 text-xs text-slate-600">Data-driven community health</Text>
           </View>
-        </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );

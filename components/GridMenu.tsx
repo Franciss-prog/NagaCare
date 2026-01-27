@@ -31,16 +31,10 @@ const menuItemsConfig: MenuItem[] = [
     gradient: ['#ff4930', '#e63820']
   },
   { 
-    label: 'AI Assistant', 
-    icon: <Brain size={28} color="white" />, 
-    screen: 'AIAssistant',
-    gradient: ['#fccb10', '#e6b600']
-  },
-  { 
     label: 'Appointments', 
     icon: <Calendar size={28} color="white" />, 
     screen: 'Appointments',
-    gradient: ['#643fb3', '#5533a0']
+    gradient: ['#fccb10', '#e6b600']
   },
 ];
 
