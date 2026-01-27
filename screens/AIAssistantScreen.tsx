@@ -5,7 +5,11 @@ import { ChatBubble } from '../components/ChatBubble';
 import ChatInput from '../components/ChatInput';
 import { aramonAI, Message } from '../services/aramonAI';
 
-export default function AIAssistantScreen() {
+interface AIAssistantScreenProps {
+  showHeader?: boolean;
+}
+
+export default function AIAssistantScreen({ showHeader = true }: AIAssistantScreenProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -121,7 +125,7 @@ export default function AIAssistantScreen() {
 
   return (
     <View className="flex-1 bg-[#0b1220]">
-      <Header title="Aramon AI" />
+      {showHeader && <Header title="Aramon AI" />}
 
       {/* Quick Action Buttons */}
       <View className="border-b border-slate-800 bg-slate-900/50 p-2">
