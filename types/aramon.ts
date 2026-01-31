@@ -3,7 +3,7 @@
 // Core types for the AI-first NagaCare experience
 // ============================================================================
 
-import { HealthFacility } from '../data/healthFacilities';
+import { HealthFacility } from '../services/facilityService';
 
 // ============================================================================
 // MESSAGE TYPES
@@ -31,7 +31,9 @@ export type ActionType =
   | 'RESCHEDULE_APPOINTMENT'
   | 'HEALTH_INQUIRY'
   | 'EMERGENCY_ALERT'
-  | 'SHOW_DIRECTIONS';
+  | 'SHOW_DIRECTIONS'
+  | 'NAVIGATE'
+  | 'CHECK_YAKAP_STATUS';
 
 export type ActionRequest =
   | { type: 'BOOK_APPOINTMENT'; data: BookAppointmentData }
@@ -41,13 +43,16 @@ export type ActionRequest =
   | { type: 'RESCHEDULE_APPOINTMENT'; data: { appointmentId: string } }
   | { type: 'HEALTH_INQUIRY'; data: HealthInquiryData }
   | { type: 'EMERGENCY_ALERT'; data: EmergencyData }
-  | { type: 'SHOW_DIRECTIONS'; data: { facilityId: string } };
+  | { type: 'SHOW_DIRECTIONS'; data: { facilityId: string } }
+  | { type: 'NAVIGATE'; data: NavigateData }
+  | { type: 'CHECK_YAKAP_STATUS'; data: Record<string, unknown> };
 
 export interface BookAppointmentData {
   facilityId?: string;
   facilityName?: string;
   date?: string;
   timeSlot?: string;
+  slotId?: string; // Database appointment slot ID for booking
   reason?: string;
   step: BookingStep;
 }
@@ -75,6 +80,12 @@ export interface HealthInquiryData {
 export interface EmergencyData {
   type: 'CALL_911' | 'SHOW_EMERGENCY_INFO' | 'FIND_ER';
   message?: string;
+}
+
+export interface NavigateData {
+  screen: string;
+  trigger?: string;
+  params?: Record<string, unknown>;
 }
 
 // ============================================================================

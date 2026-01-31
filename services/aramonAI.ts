@@ -1,6 +1,7 @@
 // ============================================================================
 // ARAMON AI SERVICE - Enhanced with Intent Detection & Actions
-// The brain of NagaCare's AI-first experience
+// The brain of Aramon AI - Naga City's health companion
+// Now connected to Supabase for real data!
 // ============================================================================
 
 import Groq from 'groq-sdk';
@@ -14,12 +15,12 @@ import {
   BookingStep,
   AppointmentSummary,
   QuickReply,
+  Appointment,
 } from '../types/aramon';
-import { healthFacilities, HealthFacility } from '../data/healthFacilities';
-import {
-  appointmentService,
-  generateAvailableDates,
-} from './appointmentService';
+import { facilityService, HealthFacility } from './facilityService';
+import { appointmentServiceDB, AppointmentWithFacility } from './appointmentServiceDB';
+import { authService } from './authService';
+import { yakapService } from './yakapService';
 
 // Initialize Groq client
 const groq = new Groq({
@@ -32,7 +33,7 @@ const groq = new Groq({
 // Now includes instructions for intent detection and structured responses
 // ============================================================================
 
-const ARAMON_SYSTEM_PROMPT = `You are Aramon AI, the primary interface for NagaCare - a health app for Naga City, Bicol, Philippines.
+const ARAMON_SYSTEM_PROMPT = `You are Aramon AI, the intelligent health assistant for Naga City, Bicol, Philippines. You are part of the NagaCare health system.
 
 YOUR CAPABILITIES:
 1. Book appointments at health facilities
@@ -41,6 +42,8 @@ YOUR CAPABILITIES:
 4. Show/manage existing appointments
 5. Provide health tips and advice
 6. Handle emergencies (direct to 911)
+7. Help with Yakap (PhilHealth Konsulta) application
+8. Check Yakap application status
 
 INTENT DETECTION - You must identify the user's intent and respond with a JSON block when actions are needed.
 
@@ -59,6 +62,8 @@ INTENT TYPES:
 - CANCEL_APPOINTMENT: User wants to cancel an appointment
 - HEALTH_INQUIRY: User asking about health/symptoms (no JSON needed, just answer)
 - EMERGENCY: User describes emergency symptoms (include JSON to show emergency options)
+- YAKAP_APPLY: User wants to apply for Yakap/PhilHealth Konsulta
+- YAKAP_STATUS: User wants to check their Yakap application status
 
 BOOKING FLOW:
 When booking, extract any information the user provides:
@@ -89,6 +94,9 @@ COMMUNICATION STYLE:
 
 EMERGENCY KEYWORDS (trigger emergency response):
 - chest pain, can't breathe, severe bleeding, unconscious, stroke, heart attack, choking
+
+YAKAP KEYWORDS (trigger Yakap application flow):
+- yakap, philhealth konsulta, philhealth registration, konsulta program, apply for philhealth, health insurance
 
 HEALTH DISCLAIMER:
 You complement health workers but do NOT replace medical professionals. For emergencies, always direct to 911.
@@ -139,10 +147,42 @@ export class AramonAI {
       {
         id: 'system',
         role: 'system',
-        content: ARAMON_SYSTEM_PROMPT,
+        content: this.buildSystemPrompt(),
         timestamp: new Date(),
       },
     ];
+  }
+
+  // Build system prompt with user context
+  private buildSystemPrompt(): string {
+    let userContext = '';
+    
+    if (authService.isAuthenticated()) {
+      const resident = authService.getCurrentResident();
+      if (resident) {
+        userContext = `
+
+CURRENT USER CONTEXT:
+- Name: ${resident.full_name}
+- Barangay: ${resident.barangay}
+- Resident ID: ${resident.id}
+The user is logged in. You can address them by name and help them with personalized services.`;
+      }
+    } else {
+      userContext = `
+
+CURRENT USER CONTEXT:
+The user is NOT logged in. For booking appointments or applying for Yakap, remind them to log in first.`;
+    }
+
+    return ARAMON_SYSTEM_PROMPT + userContext;
+  }
+
+  // Refresh the system prompt (call after login/logout)
+  refreshUserContext(): void {
+    if (this.conversationHistory.length > 0 && this.conversationHistory[0].role === 'system') {
+      this.conversationHistory[0].content = this.buildSystemPrompt();
+    }
   }
 
   // ============================================================================
@@ -150,6 +190,24 @@ export class AramonAI {
   // ============================================================================
 
   async sendMessage(userMessage: string): Promise<AramonResponse> {
+    // Handle special quick reply commands first (these don't go to AI)
+    const lowerMessage = userMessage.toLowerCase().trim();
+    
+    // Handle Yakap-related quick replies
+    if (lowerMessage === 'start_yakap' || lowerMessage === 'start application') {
+      return {
+        message: "Great! Let me open the Yakap application form for you. 📝",
+        action: {
+          type: 'NAVIGATE',
+          data: { screen: 'YakapForm' },
+        },
+      };
+    }
+    
+    if (lowerMessage === 'check_yakap_status' || lowerMessage === 'view_yakap_status') {
+      return this.handleYakapStatus("Check my Yakap status");
+    }
+
     // Add user message to history
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -163,6 +221,14 @@ export class AramonAI {
       // Check for emergency keywords first
       if (this.isEmergency(userMessage)) {
         return this.handleEmergency(userMessage);
+      }
+
+      // Check for Yakap keywords before going to AI
+      if (this.isYakapRelated(userMessage)) {
+        if (lowerMessage.includes('status') || lowerMessage.includes('check')) {
+          return this.handleYakapStatus(userMessage);
+        }
+        return this.handleYakapApply(userMessage);
       }
 
       // Check if this is a response to an ongoing flow
@@ -186,8 +252,8 @@ export class AramonAI {
         chatCompletion.choices[0]?.message?.content ||
         "I'm having trouble understanding. Could you rephrase that?";
 
-      // Parse the response for intent
-      const parsedResponse = this.parseAIResponse(rawResponse);
+      // Parse the response for intent (now async)
+      const parsedResponse = await this.parseAIResponse(rawResponse);
 
       // Add to history
       this.conversationHistory.push({
@@ -211,13 +277,11 @@ export class AramonAI {
   // PARSE AI RESPONSE - Extract intent and create inline UI
   // ============================================================================
 
-  private parseAIResponse(rawResponse: string): AramonResponse {
+  private async parseAIResponse(rawResponse: string): Promise<AramonResponse> {
     // Try to extract JSON block from response
     const jsonMatch = rawResponse.match(/```json\n?([\s\S]*?)\n?```/);
 
     let message = rawResponse.replace(/```json\n?[\s\S]*?\n?```/g, '').trim();
-    let action: ActionRequest | undefined;
-    let inlineUI: InlineUIComponent | undefined;
 
     if (jsonMatch) {
       try {
@@ -230,16 +294,22 @@ export class AramonAI {
             return this.initiateBookingFlow(message, data);
 
           case 'FIND_FACILITIES':
-            return this.handleFindFacilities(message, data);
+            return await this.handleFindFacilities(message, data);
 
           case 'SHOW_APPOINTMENTS':
-            return this.handleShowAppointments(message);
+            return await this.handleShowAppointments(message);
 
           case 'CANCEL_APPOINTMENT':
-            return this.handleCancelAppointment(message, data);
+            return await this.handleCancelAppointment(message, data);
 
           case 'EMERGENCY':
             return this.handleEmergency(message);
+
+          case 'YAKAP_APPLY':
+            return this.handleYakapApply(message);
+
+          case 'YAKAP_STATUS':
+            return await this.handleYakapStatus(message);
         }
       } catch (e) {
         console.error('Failed to parse AI intent JSON:', e);
@@ -255,6 +325,19 @@ export class AramonAI {
       return this.initiateBookingFlow(message, {});
     }
 
+    // Check for Yakap/PhilHealth registration patterns
+    if (
+      lowerMessage.includes('yakap') ||
+      lowerMessage.includes('philhealth konsulta') ||
+      lowerMessage.includes('philhealth registration') ||
+      (lowerMessage.includes('register') && lowerMessage.includes('philhealth'))
+    ) {
+      if (lowerMessage.includes('status') || lowerMessage.includes('check') || lowerMessage.includes('application')) {
+        return await this.handleYakapStatus(message);
+      }
+      return this.handleYakapApply(message);
+    }
+
     return { message };
   }
 
@@ -268,10 +351,21 @@ export class AramonAI {
   ): AramonResponse {
     const reason = (data.reason as string) || 'General Consultation';
 
-    // Find facilities that match the reason
-    const facilities = appointmentService.getFacilitiesForReason(reason);
+    // Check if user is authenticated
+    if (!authService.isAuthenticated()) {
+      return {
+        message: `To book an appointment, please log in first. You can create an account if you don't have one yet! 🔐`,
+        inlineUI: {
+          type: 'QUICK_REPLIES',
+          options: [
+            { id: '1', label: '🔑 Login', value: 'login' },
+            { id: '2', label: '📝 Register', value: 'register' },
+          ],
+        },
+      };
+    }
 
-    // Update state
+    // Update state - facilities will be loaded async
     this.stateManager.setState({
       currentFlow: 'BOOKING_APPOINTMENT',
       bookingData: {
@@ -280,13 +374,23 @@ export class AramonAI {
       },
     });
 
+    // Return placeholder, actual facilities loaded via handleFacilitySearch
+    return this.handleFacilitySearchAsync(reason, message);
+  }
+
+  // Async facility search for booking
+  private handleFacilitySearchAsync(reason: string, message?: string): AramonResponse {
+    // This will be populated by the async call in the UI layer
+    // For now, return a loading state
     return {
       message:
         message ||
-        `I'd be happy to help you book an appointment${reason ? ` for ${reason}` : ''}! Here are some nearby facilities:`,
+        `I'd be happy to help you book an appointment${reason ? ` for ${reason}` : ''}! Let me find available facilities...`,
       inlineUI: {
-        type: 'FACILITY_PICKER',
-        facilities: facilities.slice(0, 5),
+        type: 'QUICK_REPLIES',
+        options: [
+          { id: 'loading', label: '⏳ Loading facilities...', value: 'loading' },
+        ],
       },
       action: {
         type: 'BOOK_APPOINTMENT',
@@ -295,8 +399,19 @@ export class AramonAI {
     };
   }
 
+  // Called by UI after async facility fetch
+  async getFacilitiesForBooking(reason: string): Promise<HealthFacility[]> {
+    const facilities = await facilityService.searchFacilities(reason);
+    if (facilities.length > 0) {
+      return facilities.slice(0, 5);
+    }
+    // Fallback to all facilities
+    const all = await facilityService.getAllFacilities();
+    return all.slice(0, 5);
+  }
+
   // Handle facility selection
-  handleFacilitySelection(facility: HealthFacility): AramonResponse {
+  async handleFacilitySelection(facility: HealthFacility): Promise<AramonResponse> {
     this.stateManager.setState({
       selectedFacility: facility,
       bookingData: {
@@ -307,7 +422,8 @@ export class AramonAI {
       },
     });
 
-    const dates = generateAvailableDates(14);
+    // Fetch available dates from database
+    const dates = await appointmentServiceDB.getAvailableDates(facility.id, 14);
 
     // Add to conversation
     this.conversationHistory.push({
@@ -317,8 +433,21 @@ export class AramonAI {
       timestamp: new Date(),
     });
 
+    if (dates.length === 0) {
+      return {
+        message: `Unfortunately, **${facility.name}** doesn't have any available slots in the next 2 weeks. Would you like to try another facility?`,
+        inlineUI: {
+          type: 'QUICK_REPLIES',
+          options: [
+            { id: '1', label: '🏥 Try Another Facility', value: 'book appointment' },
+            { id: '2', label: '❌ Cancel', value: 'cancel' },
+          ],
+        },
+      };
+    }
+
     return {
-      message: `Great choice! **${facility.name}** is a well-rated facility. When would you like to go?`,
+      message: `Great choice! **${facility.name}** has available slots. When would you like to go?`,
       inlineUI: {
         type: 'DATE_PICKER',
         availableDates: dates,
@@ -334,7 +463,7 @@ export class AramonAI {
   }
 
   // Handle date selection
-  handleDateSelection(date: string): AramonResponse {
+  async handleDateSelection(date: string): Promise<AramonResponse> {
     const state = this.stateManager.getState();
     const facilityId = state.bookingData?.facilityId || '';
 
@@ -347,10 +476,8 @@ export class AramonAI {
       },
     });
 
-    const timeSlots = appointmentService.getAvailableTimeSlots(
-      facilityId,
-      date
-    );
+    // Fetch available time slots from database
+    const timeSlots = await appointmentServiceDB.getAvailableSlots(facilityId, date);
 
     const formattedDate = new Date(date).toLocaleDateString('en-US', {
       weekday: 'long',
@@ -364,6 +491,19 @@ export class AramonAI {
       content: `Here are the available time slots for ${formattedDate}:`,
       timestamp: new Date(),
     });
+
+    if (timeSlots.length === 0) {
+      return {
+        message: `No available slots for **${formattedDate}**. Please select another date.`,
+        inlineUI: {
+          type: 'QUICK_REPLIES',
+          options: [
+            { id: '1', label: '📅 Pick Another Date', value: 'pick another date' },
+            { id: '2', label: '❌ Cancel', value: 'cancel' },
+          ],
+        },
+      };
+    }
 
     return {
       message: `Here are the available time slots for **${formattedDate}**:`,
@@ -383,8 +523,8 @@ export class AramonAI {
     };
   }
 
-  // Handle time selection
-  handleTimeSelection(time: string): AramonResponse {
+  // Handle time selection - now stores the slot ID for booking
+  handleTimeSelection(time: string, slotId?: string): AramonResponse {
     const state = this.stateManager.getState();
     const facility = state.selectedFacility;
 
@@ -407,6 +547,7 @@ export class AramonAI {
       bookingData: {
         ...state.bookingData,
         timeSlot: time,
+        slotId: slotId, // Store the database slot ID
         step: 'CONFIRM',
       },
     });
@@ -435,24 +576,40 @@ export class AramonAI {
     };
   }
 
-  // Confirm booking
-  confirmBooking(): AramonResponse {
+  // Confirm booking - now async and saves to database
+  async confirmBooking(): Promise<AramonResponse> {
     const state = this.stateManager.getState();
     const summary = state.pendingConfirmation;
+    const slotId = state.bookingData?.slotId;
 
-    if (!summary) {
-      return { message: 'No pending appointment to confirm.' };
+    if (!summary || !slotId) {
+      return { message: 'No pending appointment to confirm. Please start over.' };
     }
 
-    // Create the appointment
-    const appointment = appointmentService.createAppointment(summary);
+    // Book the appointment in the database
+    const result = await appointmentServiceDB.bookAppointment(
+      slotId,
+      summary.reason,
+      undefined // notes
+    );
+
+    if (!result.success) {
+      return {
+        message: `❌ ${result.error || 'Failed to book appointment'}. Please try again or select a different time slot.`,
+        inlineUI: {
+          type: 'QUICK_REPLIES',
+          options: [
+            { id: '1', label: '🔄 Try Again', value: 'book appointment' },
+            { id: '2', label: '❌ Cancel', value: 'cancel' },
+          ],
+        },
+      };
+    }
 
     // Reset state
     this.stateManager.reset();
 
-    const formattedDate = appointmentService.formatAppointmentDate(
-      appointment.date
-    );
+    const formattedDate = this.formatAppointmentDate(summary.date);
 
     this.conversationHistory.push({
       id: Date.now().toString(),
@@ -462,7 +619,7 @@ export class AramonAI {
     });
 
     return {
-      message: `✅ **Your appointment is confirmed!**\n\n📍 ${appointment.facilityName}\n📅 ${formattedDate}\n⏰ ${appointment.time}\n\nI'll send you a reminder before your appointment. Don't forget to bring a valid ID!\n\nIs there anything else I can help you with?`,
+      message: `✅ **Your appointment is confirmed!**\n\n📍 ${summary.facilityName}\n📅 ${formattedDate}\n⏰ ${summary.time}\n\nI'll send you a reminder before your appointment. Don't forget to bring a valid ID!\n\nIs there anything else I can help you with?`,
       inlineUI: {
         type: 'QUICK_REPLIES',
         options: [
@@ -472,6 +629,27 @@ export class AramonAI {
         ],
       },
     };
+  }
+
+  // Helper to format date
+  private formatAppointmentDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    if (dateStr === today.toISOString().split('T')[0]) {
+      return 'Today';
+    } else if (dateStr === tomorrow.toISOString().split('T')[0]) {
+      return 'Tomorrow';
+    } else {
+      return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
   }
 
   // Cancel booking flow
@@ -503,20 +681,20 @@ export class AramonAI {
   // OTHER FLOW HANDLERS
   // ============================================================================
 
-  private handleFindFacilities(
+  private async handleFindFacilities(
     message: string,
     data: Record<string, unknown>
-  ): AramonResponse {
+  ): Promise<AramonResponse> {
     const query = (data.query as string) || '';
-    const type = data.type as HealthFacility['type'] | undefined;
     const service = data.service as string | undefined;
 
-    const facilities = appointmentService.searchFacilities({
-      query,
-      type,
-      service,
-      limit: 5,
-    });
+    let facilities: HealthFacility[];
+    
+    if (query || service) {
+      facilities = await facilityService.searchFacilities(query || service || '');
+    } else {
+      facilities = await facilityService.getAllFacilities();
+    }
 
     return {
       message:
@@ -524,15 +702,28 @@ export class AramonAI {
         `Here are some health facilities I found${query ? ` for "${query}"` : ''}:`,
       inlineUI: {
         type: 'FACILITY_PICKER',
-        facilities,
+        facilities: facilities.slice(0, 5),
       },
     };
   }
 
-  private handleShowAppointments(message: string): AramonResponse {
-    const appointments = appointmentService.getUpcomingAppointments();
+  private async handleShowAppointments(message: string): Promise<AramonResponse> {
+    if (!authService.isAuthenticated()) {
+      return {
+        message: `Please log in to view your appointments. 🔐`,
+        inlineUI: {
+          type: 'QUICK_REPLIES',
+          options: [
+            { id: '1', label: '🔑 Login', value: 'login' },
+            { id: '2', label: '📝 Register', value: 'register' },
+          ],
+        },
+      };
+    }
 
-    if (appointments.length === 0) {
+    const dbAppointments = await appointmentServiceDB.getUpcomingAppointments();
+
+    if (dbAppointments.length === 0) {
       return {
         message:
           "You don't have any upcoming appointments. Would you like to book one?",
@@ -546,6 +737,19 @@ export class AramonAI {
       };
     }
 
+    // Convert to app format
+    const appointments: Appointment[] = dbAppointments.map(apt => ({
+      id: apt.id,
+      facilityId: apt.facility_id,
+      facilityName: apt.facility_name,
+      facilityAddress: apt.facility_address,
+      date: apt.appointment_date,
+      time: apt.time_slot,
+      reason: apt.service_type || 'General Consultation',
+      status: apt.status === 'booked' ? 'confirmed' : apt.status as any,
+      createdAt: new Date(apt.created_at),
+    }));
+
     return {
       message: `Here are your upcoming appointments:`,
       inlineUI: {
@@ -555,15 +759,27 @@ export class AramonAI {
     };
   }
 
-  private handleCancelAppointment(
+  private async handleCancelAppointment(
     message: string,
     data: Record<string, unknown>
-  ): AramonResponse {
+  ): Promise<AramonResponse> {
+    if (!authService.isAuthenticated()) {
+      return {
+        message: `Please log in to manage your appointments. 🔐`,
+        inlineUI: {
+          type: 'QUICK_REPLIES',
+          options: [
+            { id: '1', label: '🔑 Login', value: 'login' },
+          ],
+        },
+      };
+    }
+
     const appointmentId = data.appointmentId as string;
 
     if (appointmentId) {
-      const success = appointmentService.cancelAppointment(appointmentId);
-      if (success) {
+      const result = await appointmentServiceDB.cancelAppointment(appointmentId);
+      if (result.success) {
         return {
           message:
             '✅ Your appointment has been cancelled. Is there anything else I can help with?',
@@ -572,7 +788,19 @@ export class AramonAI {
     }
 
     // Show appointments to let user select which to cancel
-    const appointments = appointmentService.getUpcomingAppointments();
+    const dbAppointments = await appointmentServiceDB.getUpcomingAppointments();
+    const appointments: Appointment[] = dbAppointments.map(apt => ({
+      id: apt.id,
+      facilityId: apt.facility_id,
+      facilityName: apt.facility_name,
+      facilityAddress: apt.facility_address,
+      date: apt.appointment_date,
+      time: apt.time_slot,
+      reason: apt.service_type || 'General Consultation',
+      status: 'confirmed',
+      createdAt: new Date(apt.created_at),
+    }));
+
     return {
       message: 'Which appointment would you like to cancel?',
       inlineUI: {
@@ -582,19 +810,19 @@ export class AramonAI {
     };
   }
 
-  cancelAppointment(appointmentId: string): AramonResponse {
-    const success = appointmentService.cancelAppointment(appointmentId);
+  async cancelAppointment(appointmentId: string): Promise<AramonResponse> {
+    const result = await appointmentServiceDB.cancelAppointment(appointmentId);
 
     this.conversationHistory.push({
       id: Date.now().toString(),
       role: 'assistant',
-      content: success
+      content: result.success
         ? 'Your appointment has been cancelled.'
         : 'Could not cancel the appointment.',
       timestamp: new Date(),
     });
 
-    if (success) {
+    if (result.success) {
       return {
         message:
           '✅ Your appointment has been cancelled successfully. Would you like to book a new one?',
@@ -640,6 +868,25 @@ export class AramonAI {
     return emergencyKeywords.some((keyword) => lowerMessage.includes(keyword));
   }
 
+  // Check if message is related to Yakap
+  private isYakapRelated(message: string): boolean {
+    const yakapKeywords = [
+      'yakap',
+      'philhealth konsulta',
+      'philhealth registration',
+      'konsulta program',
+      'apply for philhealth',
+      'health insurance',
+      'philhealth application',
+      'register philhealth',
+      'fill up yakap',
+      'yakap form',
+    ];
+
+    const lowerMessage = message.toLowerCase();
+    return yakapKeywords.some((keyword) => lowerMessage.includes(keyword));
+  }
+
   private handleEmergency(message: string): AramonResponse {
     return {
       message: `🚨 **This sounds like a medical emergency.**\n\nPlease take immediate action:`,
@@ -659,6 +906,139 @@ export class AramonAI {
         },
       },
     };
+  }
+
+  // ============================================================================
+  // YAKAP HANDLERS (PhilHealth Konsulta Registration)
+  // ============================================================================
+
+  private handleYakapApply(message: string): AramonResponse {
+    // Check if user is authenticated
+    if (!authService.isAuthenticated()) {
+      return {
+        message: `To apply for Yakap (PhilHealth Konsulta), you'll need to log in first. This ensures your application is properly linked to your account! 🔐`,
+        inlineUI: {
+          type: 'QUICK_REPLIES',
+          options: [
+            { id: '1', label: '🔑 Login', value: 'login' },
+            { id: '2', label: '📝 Register', value: 'register' },
+          ],
+        },
+      };
+    }
+
+    return {
+      message: `Great! I can help you apply for **Yakap** (PhilHealth Konsulta Package). 🏥\n\nThis program provides you with:\n• Free primary care consultations\n• Basic laboratory tests\n• Essential medicines\n• Annual health assessments\n\nWould you like to start your application now?`,
+      inlineUI: {
+        type: 'QUICK_REPLIES',
+        options: [
+          { id: '1', label: '📝 Start Application', value: 'start_yakap' },
+          { id: '2', label: '📋 Check My Status', value: 'check_yakap_status' },
+          { id: '3', label: '❓ Learn More', value: 'yakap_info' },
+        ],
+      },
+      action: {
+        type: 'NAVIGATE',
+        data: {
+          screen: 'YakapForm',
+          trigger: 'start_yakap', // This will trigger navigation when user clicks "Start Application"
+        },
+      },
+    };
+  }
+
+  private async handleYakapStatus(message: string): Promise<AramonResponse> {
+    // Check if user is authenticated
+    if (!authService.isAuthenticated()) {
+      return {
+        message: `To check your Yakap application status, please log in first! 🔐`,
+        inlineUI: {
+          type: 'QUICK_REPLIES',
+          options: [
+            { id: '1', label: '🔑 Login', value: 'login' },
+            { id: '2', label: '📝 Register', value: 'register' },
+          ],
+        },
+      };
+    }
+
+    // Fetch actual status from yakapService
+    const resident = authService.getCurrentResident();
+    if (!resident) {
+      return {
+        message: `I couldn't find your profile. Please try logging in again.`,
+      };
+    }
+
+    try {
+      const result = await yakapService.getApplicationStatus(resident.id);
+      
+      if (result.application) {
+        const app = result.application;
+        const statusEmoji = {
+          pending: '⏳',
+          approved: '✅',
+          returned: '🔄',
+          rejected: '❌',
+        }[app.status] || '📋';
+
+        const statusText = {
+          pending: 'Pending Review',
+          approved: 'Approved',
+          returned: 'Returned for Revision',
+          rejected: 'Rejected',
+        }[app.status] || app.status;
+
+        let statusMessage = `${statusEmoji} **Yakap Application Status**\n\n`;
+        statusMessage += `• **Status:** ${statusText}\n`;
+        statusMessage += `• **Applied:** ${new Date(app.applied_at).toLocaleDateString()}\n`;
+        statusMessage += `• **Membership:** ${app.membership_type}\n`;
+        
+        if (app.remarks) {
+          statusMessage += `• **Remarks:** ${app.remarks}\n`;
+        }
+
+        if (app.status === 'returned') {
+          return {
+            message: statusMessage + `\nYour application has been returned for revision. Would you like to update it?`,
+            inlineUI: {
+              type: 'QUICK_REPLIES',
+              options: [
+                { id: '1', label: '📝 Update Application', value: 'start_yakap' },
+                { id: '2', label: '❓ Need Help', value: 'Help with Yakap application' },
+              ],
+            },
+          };
+        }
+
+        return {
+          message: statusMessage,
+          inlineUI: {
+            type: 'QUICK_REPLIES',
+            options: [
+              { id: '1', label: '🏠 Back to Menu', value: 'What can you help me with?' },
+            ],
+          },
+        };
+      } else {
+        // No application found
+        return {
+          message: `You don't have a Yakap application yet. Would you like to apply now? 📝\n\nYakap (PhilHealth Konsulta) provides free primary care consultations, basic lab tests, and essential medicines.`,
+          inlineUI: {
+            type: 'QUICK_REPLIES',
+            options: [
+              { id: '1', label: '📝 Apply Now', value: 'start_yakap' },
+              { id: '2', label: '❓ Learn More', value: 'What is Yakap?' },
+            ],
+          },
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching Yakap status:', error);
+      return {
+        message: `I had trouble checking your application status. Please try again later.`,
+      };
+    }
   }
 
   // ============================================================================
@@ -724,28 +1104,57 @@ export class AramonAI {
   }
 
   // Get proactive greeting based on user context
-  getProactiveGreeting(): AramonResponse {
-    const tomorrowAppointments = appointmentService.getAppointmentsTomorrow();
-
-    let message = `Hello! 👋 I'm Aramon, your health assistant for Naga City.\n\nI can help you with:\n• 📅 Booking appointments\n• 🏥 Finding health facilities\n• 💊 Health questions & tips\n• 🚨 Emergency guidance`;
+  async getProactiveGreeting(): Promise<AramonResponse> {
+    // Get user's name if logged in
+    const resident = authService.getCurrentResident();
+    const userName = resident?.full_name?.split(' ')[0] || ''; // First name only
+    
+    let message = userName 
+      ? `Hello, ${userName}! 👋 I'm Aramon, your health assistant for Naga City.\n\n`
+      : `Hello! 👋 I'm Aramon, your health assistant for Naga City.\n\n`;
+    
+    message += `I can help you with:\n• 📅 Booking appointments\n• 🏥 Finding health facilities\n• 💊 Health questions & tips\n• 📝 Yakap (PhilHealth Konsulta) application\n• 🚨 Emergency guidance`;
 
     let inlineUI: InlineUIComponent | undefined;
 
-    if (tomorrowAppointments.length > 0) {
-      const apt = tomorrowAppointments[0];
-      message += `\n\n📌 **Reminder:** You have an appointment tomorrow at ${apt.time} with ${apt.facilityName}.`;
+    // Check if user is authenticated and has upcoming appointments
+    if (authService.isAuthenticated()) {
+      const upcomingAppointments = await appointmentServiceDB.getUpcomingAppointments();
+      
+      if (upcomingAppointments.length > 0) {
+        const apt = upcomingAppointments[0];
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-      inlineUI = {
-        type: 'APPOINTMENT_CARD',
-        appointment: apt,
-      };
-    } else {
+        if (apt.appointment_date === tomorrowStr) {
+          message += `\n\n📌 **Reminder:** You have an appointment tomorrow at ${apt.time_slot} with ${apt.facility_name}.`;
+
+          inlineUI = {
+            type: 'APPOINTMENT_CARD',
+            appointment: {
+              id: apt.id,
+              facilityId: apt.facility_id,
+              facilityName: apt.facility_name,
+              facilityAddress: apt.facility_address,
+              date: apt.appointment_date,
+              time: apt.time_slot,
+              reason: apt.service_type || 'General Consultation',
+              status: 'confirmed',
+              createdAt: new Date(apt.created_at),
+            },
+          };
+        }
+      }
+    }
+
+    if (!inlineUI) {
       inlineUI = {
         type: 'QUICK_REPLIES',
         options: [
           { id: '1', label: '📅 Book Appointment', value: 'I want to book an appointment' },
           { id: '2', label: '🏥 Find Facilities', value: 'Find nearby health facilities' },
-          { id: '3', label: '💊 Health Tips', value: 'Give me a health tip' },
+          { id: '3', label: '📝 Apply for Yakap', value: 'I want to apply for yakap' },
         ],
       };
     }

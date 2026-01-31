@@ -32,7 +32,7 @@ export const EmergencyCard: React.FC<EmergencyCardProps> = ({ data }) => {
       <View className="bg-red-900/30 rounded-2xl overflow-hidden border-2 border-red-500">
         {/* Header */}
         <View className="bg-red-600 px-4 py-3 flex-row items-center justify-center">
-          <AlertTriangle size={24} color="white" />
+          <AlertTriangle size={24} {...{ color: "white" }} />
           <Text className="text-white text-lg font-bold ml-2">
             EMERGENCY
           </Text>
@@ -50,7 +50,7 @@ export const EmergencyCard: React.FC<EmergencyCardProps> = ({ data }) => {
             activeOpacity={0.8}
             className="flex-row items-center justify-center bg-red-600 rounded-xl py-4 mb-3"
           >
-            <Phone size={24} color="white" />
+            <Phone size={24} {...{ color: "white" }} />
             <Text className="text-white font-bold text-xl ml-2">
               CALL 911
             </Text>
@@ -62,7 +62,7 @@ export const EmergencyCard: React.FC<EmergencyCardProps> = ({ data }) => {
             activeOpacity={0.8}
             className="flex-row items-center justify-center bg-slate-700 rounded-xl py-3 mb-3"
           >
-            <Phone size={18} color="#06b6d4" />
+            <Phone size={18} {...{ color: "#06b6d4" }} />
             <Text className="text-cyan-400 font-semibold ml-2">
               Naga City Emergency Hotline
             </Text>
@@ -71,7 +71,7 @@ export const EmergencyCard: React.FC<EmergencyCardProps> = ({ data }) => {
           {/* Emergency Info */}
           <View className="bg-slate-800/50 rounded-xl p-3">
             <View className="flex-row items-start mb-2">
-              <Info size={16} color="#94a3b8" />
+              <Info size={16} {...{ color: "#94a3b8" }} />
               <Text className="text-slate-300 text-xs ml-2 flex-1">
                 While waiting for help:
               </Text>

@@ -20,19 +20,19 @@ interface MenuItem {
 const menuItemsConfig: MenuItem[] = [
   { 
     label: 'Health Map', 
-    icon: <MapPin size={28} color="white" />, 
+    icon: <MapPin size={28} {...{ color: "white" }} />, 
     screen: 'HealthMap',
     gradient: ['#643fb3', '#5533a0']
   },
   { 
     label: 'Health Facilities', 
-    icon: <Building2 size={28} color="white" />, 
+    icon: <Building2 size={28} {...{ color: "white" }} />, 
     screen: 'Facilities',
     gradient: ['#ff4930', '#e63820']
   },
   { 
     label: 'Appointments', 
-    icon: <Calendar size={28} color="white" />, 
+    icon: <Calendar size={28} {...{ color: "white" }} />, 
     screen: 'Appointments',
     gradient: ['#fccb10', '#e6b600']
   },

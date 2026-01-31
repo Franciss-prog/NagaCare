@@ -6,25 +6,25 @@ const settingsOptions = [
   {
     title: 'Notifications',
     description: 'Manage alert preferences',
-    icon: <Bell size={24} color="#fccb10" />,
+    icon: <Bell size={24} {...{ color: "#fccb10" }} />,
     color: '#fccb10',
   },
   {
     title: 'Privacy & Security',
     description: 'Control your data',
-    icon: <Shield size={24} color="#643fb3" />,
+    icon: <Shield size={24} {...{ color: "#643fb3" }} />,
     color: '#643fb3',
   },
   {
     title: 'Help & Support',
     description: 'Get assistance',
-    icon: <HelpCircle size={24} color="#3b82f6" />,
+    icon: <HelpCircle size={24} {...{ color: "#3b82f6" }} />,
     color: '#3b82f6',
   },
   {
     title: 'Settings',
     description: 'App preferences',
-    icon: <Settings size={24} color="#64748b" />,
+    icon: <Settings size={24} {...{ color: "#64748b" }} />,
     color: '#64748b',
   },
 ];
@@ -45,7 +45,7 @@ export default function AccountScreen() {
         <View className="px-6 mb-8">
           <View className="items-center rounded-3xl bg-slate-800/50 border border-slate-700/50 p-8">
             <View className="mb-4 h-24 w-24 items-center justify-center rounded-full" style={{ backgroundColor: '#643fb3' }}>
-              <User size={48} color="white" strokeWidth={2} />
+              <User size={48} {...{ color: "white", strokeWidth: 2 }} />
             </View>
             <Text className="text-2xl font-bold text-white">Guest User</Text>
             <Text className="mt-1 text-sm text-slate-400">guest@nagacare.ph</Text>
@@ -129,7 +129,7 @@ export default function AccountScreen() {
         <View className="px-6 mb-6">
           <TouchableOpacity className="overflow-hidden rounded-2xl bg-red-900/20 border border-red-800/30 p-4" activeOpacity={0.7}>
             <View className="flex-row items-center justify-center gap-2">
-              <LogOut size={20} color="#ef4444" />
+              <LogOut size={20} {...{ color: "#ef4444" }} />
               <Text className="font-semibold text-red-400">Sign Out</Text>
             </View>
           </TouchableOpacity>
@@ -138,8 +138,8 @@ export default function AccountScreen() {
         {/* App Info */}
         <View className="px-6 mb-6">
           <View className="items-center py-4">
-            <Text className="text-sm text-slate-500">NagaCare v1.0.0</Text>
-            <Text className="mt-1 text-xs text-slate-600">Data-driven community health</Text>
+            <Text className="text-sm text-slate-500">Aramon AI v1.0.0</Text>
+            <Text className="mt-1 text-xs text-slate-600">Naga City's AI Health Companion</Text>
           </View>
         </View>
       </ScrollView>

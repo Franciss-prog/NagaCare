@@ -5,7 +5,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { MapPin, Star, Clock, ChevronRight } from 'lucide-react-native';
-import { HealthFacility } from '../../data/healthFacilities';
+import { HealthFacility } from '../../services/facilityService';
 
 interface FacilityPickerProps {
   facilities: HealthFacility[];
@@ -79,7 +79,7 @@ export const FacilityPicker: React.FC<FacilityPickerProps> = ({
 
             {/* Address */}
             <View className="flex-row items-center mb-2">
-              <MapPin size={14} color="#22c55e" />
+              <MapPin size={14} {...{ color: "#22c55e" }} />
               <Text className="text-slate-400 text-xs ml-1 flex-1" numberOfLines={1}>
                 {facility.address}
               </Text>
@@ -87,17 +87,19 @@ export const FacilityPicker: React.FC<FacilityPickerProps> = ({
 
             {/* Rating & Wait Time */}
             <View className="flex-row items-center justify-between mb-3">
-              <View className="flex-row items-center">
-                <Star size={14} color="#fbbf24" fill="#fbbf24" />
-                <Text className="text-amber-400 text-sm ml-1 font-medium">
-                  {facility.rating.toFixed(1)}
-                </Text>
-              </View>
-              {facility.estimatedWaitTime && (
+              {facility.yakap_accredited && (
                 <View className="flex-row items-center">
-                  <Clock size={14} color="#94a3b8" />
-                  <Text className="text-slate-400 text-xs ml-1">
-                    ~{facility.estimatedWaitTime} min wait
+                  <Star size={14} {...{ color: "#fbbf24", fill: "#fbbf24" }} />
+                  <Text className="text-amber-400 text-sm ml-1 font-medium">
+                    YAKAP Accredited
+                  </Text>
+                </View>
+              )}
+              {facility.operating_hours && (
+                <View className="flex-row items-center">
+                  <Clock size={14} {...{ color: "#94a3b8" }} />
+                  <Text className="text-slate-400 text-xs ml-1" numberOfLines={1}>
+                    {facility.operating_hours}
                   </Text>
                 </View>
               )}
@@ -125,7 +127,7 @@ export const FacilityPicker: React.FC<FacilityPickerProps> = ({
             {/* Select Button */}
             <View className="flex-row items-center justify-center bg-cyan-600 rounded-xl py-2">
               <Text className="text-white font-semibold mr-1">Select</Text>
-              <ChevronRight size={16} color="white" />
+              <ChevronRight size={16} {...{ color: "white" }} />
             </View>
           </TouchableOpacity>
         ))}
