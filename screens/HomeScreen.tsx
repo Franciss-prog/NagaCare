@@ -1,5 +1,5 @@
 // ============================================================================
-// HOME SCREEN - AI-First NagaCare Experience
+// HOME SCREEN - Aramon AI Chat Experience
 // Aramon AI is the main interface for everything
 // ============================================================================
 
@@ -14,16 +14,18 @@ import {
   Platform,
   StatusBar,
   Linking,
+  Image,
 } from 'react-native';
 import {
   User,
   Trash2,
   Phone,
 } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 import { ChatBubble } from '../components/ChatBubble';
 import ChatInput from '../components/ChatInput';
 import { aramonAI, AramonResponse, Message } from '../services/aramonAI';
-import { HealthFacility } from '../data/healthFacilities';
+import { HealthFacility } from '../services/facilityService';
 import {
   FacilityPicker,
   DatePicker,
@@ -34,7 +36,7 @@ import {
   QuickReplies,
   EmergencyCard,
 } from '../components/chat';
-import { InlineUIComponent } from '../types/aramon';
+import { InlineUIComponent, ActionRequest } from '../types/aramon';
 
 // ============================================================================
 // TYPES
@@ -49,6 +51,7 @@ interface ChatMessage extends Message {
 // ============================================================================
 
 export default function HomeScreen() {
+  const navigation = useNavigation<any>();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -59,16 +62,22 @@ export default function HomeScreen() {
   // ============================================================================
 
   useEffect(() => {
-    // Get proactive greeting from Aramon
-    const greeting = aramonAI.getProactiveGreeting();
-    const greetingMessage: ChatMessage = {
-      id: 'greeting',
-      role: 'assistant',
-      content: greeting.message,
-      timestamp: new Date(),
-      inlineUI: greeting.inlineUI,
+    // Refresh user context and get proactive greeting from Aramon
+    const initGreeting = async () => {
+      // Refresh Aramon's knowledge of the current user
+      aramonAI.refreshUserContext();
+      
+      const greeting = await aramonAI.getProactiveGreeting();
+      const greetingMessage: ChatMessage = {
+        id: 'greeting',
+        role: 'assistant',
+        content: greeting.message,
+        timestamp: new Date(),
+        inlineUI: greeting.inlineUI,
+      };
+      setMessages([greetingMessage]);
     };
-    setMessages([greetingMessage]);
+    initGreeting();
   }, []);
 
   // ============================================================================
@@ -140,13 +149,21 @@ export default function HomeScreen() {
       inlineUI: response.inlineUI,
     };
     setMessages((prev) => [...prev, aiMessage]);
+
+    // Handle navigation actions
+    if (response.action?.type === 'NAVIGATE') {
+      const { screen, params } = response.action.data as { screen: string; params?: any };
+      setTimeout(() => {
+        navigation.navigate(screen, params);
+      }, 500); // Small delay so user sees the message first
+    }
   };
 
   // ============================================================================
   // INLINE UI HANDLERS
   // ============================================================================
 
-  const handleFacilitySelect = (facility: HealthFacility) => {
+  const handleFacilitySelect = async (facility: HealthFacility) => {
     // Add user selection as message
     setMessages((prev) => [
       ...prev,
@@ -158,11 +175,13 @@ export default function HomeScreen() {
       },
     ]);
 
-    const response = aramonAI.handleFacilitySelection(facility);
+    setIsLoading(true);
+    const response = await aramonAI.handleFacilitySelection(facility);
+    setIsLoading(false);
     addAIResponse(response);
   };
 
-  const handleDateSelect = (date: string) => {
+  const handleDateSelect = async (date: string) => {
     const formattedDate = new Date(date).toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'short',
@@ -179,11 +198,13 @@ export default function HomeScreen() {
       },
     ]);
 
-    const response = aramonAI.handleDateSelection(date);
+    setIsLoading(true);
+    const response = await aramonAI.handleDateSelection(date);
+    setIsLoading(false);
     addAIResponse(response);
   };
 
-  const handleTimeSelect = (time: string) => {
+  const handleTimeSelect = (time: string, slotId?: string) => {
     setMessages((prev) => [
       ...prev,
       {
@@ -194,11 +215,11 @@ export default function HomeScreen() {
       },
     ]);
 
-    const response = aramonAI.handleTimeSelection(time);
+    const response = aramonAI.handleTimeSelection(time, slotId);
     addAIResponse(response);
   };
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     setMessages((prev) => [
       ...prev,
       {
@@ -209,7 +230,9 @@ export default function HomeScreen() {
       },
     ]);
 
-    const response = aramonAI.confirmBooking();
+    setIsLoading(true);
+    const response = await aramonAI.confirmBooking();
+    setIsLoading(false);
     addAIResponse(response);
   };
 
@@ -232,7 +255,7 @@ export default function HomeScreen() {
     await handleSendMessage(value);
   };
 
-  const handleCancelAppointment = (appointmentId: string) => {
+  const handleCancelAppointment = async (appointmentId: string) => {
     setMessages((prev) => [
       ...prev,
       {
@@ -243,13 +266,15 @@ export default function HomeScreen() {
       },
     ]);
 
-    const response = aramonAI.cancelAppointment(appointmentId);
+    setIsLoading(true);
+    const response = await aramonAI.cancelAppointment(appointmentId);
+    setIsLoading(false);
     addAIResponse(response);
   };
 
-  const handleClearChat = () => {
+  const handleClearChat = async () => {
     aramonAI.clearHistory();
-    const greeting = aramonAI.getProactiveGreeting();
+    const greeting = await aramonAI.getProactiveGreeting();
     const greetingMessage: ChatMessage = {
       id: 'greeting-' + Date.now(),
       role: 'assistant',
@@ -343,57 +368,100 @@ export default function HomeScreen() {
     <View className="flex-1 bg-[#0b1220]">
       <StatusBar barStyle="light-content" backgroundColor="#0b1220" />
 
-      {/* Header */}
-      <View className="bg-[#0b1220] border-b border-slate-800 px-4 pt-12 pb-4">
+      {/* Modern Header with Gradient Accent */}
+      <View className="bg-[#0b1220] px-4 pt-12 pb-4">
         <View className="flex-row items-center justify-between">
           {/* Left: Logo & Title */}
           <View className="flex-row items-center">
-            <Text className="text-2xl mr-2">🏥</Text>
+            {/* Gradient Logo Container */}
+            <View className="mr-3">
+              <View 
+                className="w-11 h-11 rounded-2xl items-center justify-center overflow-hidden"
+                style={{
+                  backgroundColor: '#1a1a2e',
+                  borderWidth: 1.5,
+                  borderColor: 'rgba(249, 115, 22, 0.4)',
+                }}
+              >
+                <Image
+                  source={require('../assets/images/aramonAI.jpg')}
+                  style={{ width: 44, height: 44 }}
+                  resizeMode="cover"
+                />
+              </View>
+            </View>
             <View>
-              <Text className="text-white text-xl font-bold">NagaCare</Text>
-              <Text className="text-cyan-400 text-xs">Powered by Aramon AI</Text>
+              <Text className="text-white text-xl font-bold tracking-tight">Aramon AI</Text>
+              <Text className="text-slate-400 text-xs">Your Health Companion</Text>
             </View>
           </View>
 
           {/* Right: Actions */}
           <View className="flex-row items-center gap-2">
+            {/* Clear Chat */}
+            <TouchableOpacity
+              onPress={handleClearChat}
+              activeOpacity={0.7}
+              className="bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/50"
+            >
+              <Trash2 size={18} {...{ color: "#94a3b8" }} />
+            </TouchableOpacity>
+
             {/* Emergency Button */}
             <TouchableOpacity
               onPress={handleEmergencyCall}
               activeOpacity={0.7}
-              className="bg-red-600 rounded-full p-2.5"
+              className="bg-red-500/20 rounded-xl p-2.5 border border-red-500/30"
             >
-              <Phone size={20} color="white" />
+              <Phone size={18} {...{ color: "#ef4444" }} />
             </TouchableOpacity>
 
             {/* Profile Button */}
             <TouchableOpacity
+              onPress={() => navigation.navigate('Profile')}
               activeOpacity={0.7}
-              className="bg-slate-800 rounded-full p-2.5"
+              className="bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/50"
             >
-              <User size={20} color="#94a3b8" />
+              <User size={18} {...{ color: "#94a3b8" }} />
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* Subtle gradient line */}
+        <View className="h-[1px] mt-4 rounded-full overflow-hidden">
+          <View 
+            className="flex-1"
+            style={{
+              backgroundColor: 'transparent',
+              borderBottomWidth: 1,
+              borderBottomColor: 'rgba(100, 116, 139, 0.2)',
+            }}
+          />
         </View>
       </View>
 
       {/* Chat Messages */}
       <ScrollView
         ref={scrollViewRef}
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 + keyboardHeight }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 + keyboardHeight }}
         showsVerticalScrollIndicator={false}
         className="flex-1"
         keyboardShouldPersistTaps="handled"
       >
-        {messages.map((message) => (
+        {messages.map((message, index) => (
           <View key={message.id}>
             <ChatBubble
               text={message.content}
               fromUser={message.role === 'user'}
+              timestamp={message.timestamp}
+              showAvatar={
+                message.role === 'assistant' &&
+                (index === 0 || messages[index - 1]?.role === 'user')
+              }
             />
             {/* Render inline UI after assistant messages */}
             {message.role === 'assistant' && message.inlineUI && (
-              <View className="ml-2">
+              <View className="ml-11 mb-4">
                 {renderInlineUI(message.inlineUI)}
               </View>
             )}
@@ -402,26 +470,34 @@ export default function HomeScreen() {
 
         {/* Loading Indicator */}
         {isLoading && (
-          <View className="mb-3 items-start">
-            <View className="flex-row items-center bg-slate-800 rounded-2xl px-4 py-3">
-              <ActivityIndicator color="#06b6d4" size="small" />
-              <Text className="text-slate-400 ml-2 text-sm">
-                Aramon is thinking...
-              </Text>
+          <View className="flex-row mb-4">
+            <View className="mr-2 mt-1">
+              <View 
+                className="w-9 h-9 rounded-full items-center justify-center overflow-hidden"
+                style={{
+                  backgroundColor: '#1a1a2e',
+                  borderWidth: 1.5,
+                  borderColor: 'rgba(249, 115, 22, 0.4)',
+                }}
+              >
+                <Image
+                  source={require('../assets/images/aramonAI.jpg')}
+                  style={{ width: 36, height: 36 }}
+                  resizeMode="cover"
+                />
+              </View>
+            </View>
+            <View className="bg-slate-800/80 rounded-3xl rounded-tl-lg px-5 py-4 border border-slate-700/50">
+              <View className="flex-row items-center">
+                <ActivityIndicator color="#f97316" size="small" />
+                <Text className="text-slate-400 ml-3 text-sm">
+                  Thinking...
+                </Text>
+              </View>
             </View>
           </View>
         )}
       </ScrollView>
-
-      {/* Clear Chat Button (floating) */}
-      <TouchableOpacity
-        onPress={handleClearChat}
-        activeOpacity={0.7}
-        className="absolute right-4 bg-slate-800 border border-slate-700 rounded-full p-3"
-        style={{ bottom: 90 + keyboardHeight }}
-      >
-        <Trash2 size={18} color="#94a3b8" />
-      </TouchableOpacity>
 
       {/* Chat Input */}
       <View
@@ -435,7 +511,7 @@ export default function HomeScreen() {
         }}
       >
         <ChatInput
-          placeholder="Ask Aramon anything..."
+          placeholder="Message Aramon..."
           onSend={handleSendMessage}
           disabled={isLoading}
         />

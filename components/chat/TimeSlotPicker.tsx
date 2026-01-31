@@ -10,7 +10,7 @@ import { TimeSlot } from '../../types/aramon';
 interface TimeSlotPickerProps {
   slots: TimeSlot[];
   date: string;
-  onSelect: (time: string) => void;
+  onSelect: (time: string, slotId?: string) => void;
 }
 
 export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
@@ -18,7 +18,7 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
   date,
   onSelect,
 }) => {
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
 
   // Separate morning and afternoon slots
   const morningSlots = slots.filter((slot) => slot.time.includes('AM'));
@@ -26,12 +26,12 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
 
   const handleSelect = (slot: TimeSlot) => {
     if (!slot.available) return;
-    setSelectedSlot(slot.time);
+    setSelectedSlot(slot);
   };
 
   const handleConfirm = () => {
     if (selectedSlot) {
-      onSelect(selectedSlot);
+      onSelect(selectedSlot.time, selectedSlot.id);
     }
   };
 
@@ -48,7 +48,7 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
       </Text>
       <View className="flex-row flex-wrap gap-2">
         {slotsToRender.map((slot) => {
-          const isSelected = selectedSlot === slot.time;
+          const isSelected = selectedSlot?.id === slot.id;
 
           return (
             <TouchableOpacity
@@ -66,7 +66,7 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
             >
               <View className="flex-row items-center">
                 {isSelected && (
-                  <Check size={14} color="white" className="mr-1" />
+                  <Check size={14} {...{ color: "white" }} />
                 )}
                 <Text
                   className={`text-sm font-medium ${
@@ -98,7 +98,7 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
         {/* Header */}
         <View className="flex-row items-center justify-between mb-4">
           <View className="flex-row items-center">
-            <Clock size={20} color="#06b6d4" />
+            <Clock size={20} {...{ color: "#06b6d4" }} />
             <Text className="text-white font-semibold ml-2 text-base">
               Select a Time
             </Text>
@@ -132,9 +132,9 @@ export const TimeSlotPicker: React.FC<TimeSlotPickerProps> = ({
             className="flex-row items-center justify-center bg-cyan-600 rounded-xl py-3 mt-4"
           >
             <Text className="text-white font-semibold mr-1">
-              Continue with {selectedSlot}
+              Continue with {selectedSlot.time}
             </Text>
-            <ChevronRight size={18} color="white" />
+            <ChevronRight size={18} {...{ color: "white" }} />
           </TouchableOpacity>
         )}
       </View>

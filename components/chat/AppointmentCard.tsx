@@ -80,19 +80,19 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
         {/* Date & Time Row */}
         <View className="flex-row bg-slate-700/50 rounded-xl p-3 mb-3">
           <View className="flex-1 flex-row items-center">
-            <Calendar size={16} color="#3b82f6" />
+            <Calendar size={16} {...{ color: "#3b82f6" }} />
             <Text className="text-white ml-2 font-medium">{formattedDate}</Text>
           </View>
           <View className="w-px bg-slate-600 mx-3" />
           <View className="flex-1 flex-row items-center">
-            <Clock size={16} color="#a855f7" />
+            <Clock size={16} {...{ color: "#a855f7" }} />
             <Text className="text-white ml-2 font-medium">{appointment.time}</Text>
           </View>
         </View>
 
         {/* Address */}
         <View className="flex-row items-center mb-4">
-          <MapPin size={14} color="#22c55e" />
+          <MapPin size={14} {...{ color: "#22c55e" }} />
           <Text className="text-slate-400 text-xs ml-1 flex-1">
             {appointment.facilityAddress}
           </Text>
@@ -107,7 +107,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
                 activeOpacity={0.8}
                 className="flex-1 flex-row items-center justify-center bg-green-600/20 rounded-xl py-2.5 border border-green-600/30"
               >
-                <Navigation size={16} color="#22c55e" />
+                <Navigation size={16} {...{ color: "#22c55e" }} />
                 <Text className="text-green-400 font-medium ml-1.5 text-sm">
                   Directions
                 </Text>
@@ -120,7 +120,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
                 activeOpacity={0.8}
                 className="flex-1 flex-row items-center justify-center bg-blue-600/20 rounded-xl py-2.5 border border-blue-600/30"
               >
-                <RotateCcw size={16} color="#3b82f6" />
+                <RotateCcw size={16} {...{ color: "#3b82f6" }} />
                 <Text className="text-blue-400 font-medium ml-1.5 text-sm">
                   Reschedule
                 </Text>
@@ -133,7 +133,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
                 activeOpacity={0.8}
                 className="flex-1 flex-row items-center justify-center bg-red-600/20 rounded-xl py-2.5 border border-red-600/30"
               >
-                <X size={16} color="#ef4444" />
+                <X size={16} {...{ color: "#ef4444" }} />
                 <Text className="text-red-400 font-medium ml-1.5 text-sm">
                   Cancel
                 </Text>

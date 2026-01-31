@@ -26,7 +26,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
       <View className="my-2">
         <View className="bg-slate-800 rounded-2xl p-6 border border-slate-700 items-center">
           <View className="w-16 h-16 rounded-full bg-slate-700 items-center justify-center mb-3">
-            <Calendar size={32} color="#64748b" />
+            <Calendar size={32} {...{ color: "#64748b" }} />
           </View>
           <Text className="text-white font-semibold text-lg mb-1">
             No Appointments
@@ -43,7 +43,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
     <View className="my-2">
       {/* Header */}
       <View className="flex-row items-center mb-2 px-1">
-        <Calendar size={16} color="#06b6d4" />
+        <Calendar size={16} {...{ color: "#06b6d4" }} />
         <Text className="text-cyan-400 font-medium ml-1.5 text-sm">
           {appointments.length} Upcoming Appointment{appointments.length > 1 ? 's' : ''}
         </Text>

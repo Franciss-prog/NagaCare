@@ -38,7 +38,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ dates, onSelect }) => {
       <View className="bg-slate-800 rounded-2xl p-4 border border-slate-700">
         {/* Header */}
         <View className="flex-row items-center mb-4">
-          <Calendar size={20} color="#06b6d4" />
+          <Calendar size={20} {...{ color: "#06b6d4" }} />
           <Text className="text-white font-semibold ml-2 text-base">
             Select a Date
           </Text>
@@ -117,7 +117,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ dates, onSelect }) => {
               {dates.find((d) => d.date === selectedDate)?.monthName}{' '}
               {dates.find((d) => d.date === selectedDate)?.dayNumber}
             </Text>
-            <ChevronRight size={18} color="white" />
+            <ChevronRight size={18} {...{ color: "white" }} />
           </TouchableOpacity>
         )}
       </View>
