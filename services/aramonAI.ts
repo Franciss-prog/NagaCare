@@ -410,7 +410,7 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     return all.slice(0, 5);
   }
 
-  // Handle facility selection
+  // Handle facility selection - now shows date picker for any date
   async handleFacilitySelection(facility: HealthFacility): Promise<AramonResponse> {
     this.stateManager.setState({
       selectedFacility: facility,
@@ -422,32 +422,19 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       },
     });
 
-    // Fetch available dates from database
-    const dates = await appointmentServiceDB.getAvailableDates(facility.id, 14);
+    // Get next 30 days for date selection (no longer fetching from DB)
+    const dates = appointmentServiceDB.getAvailableDates(30);
 
     // Add to conversation
     this.conversationHistory.push({
       id: Date.now().toString(),
       role: 'assistant',
-      content: `Great choice! ${facility.name} is a well-rated facility. When would you like to go?`,
+      content: `Great choice! ${facility.name}. When would you like to request your appointment?`,
       timestamp: new Date(),
     });
 
-    if (dates.length === 0) {
-      return {
-        message: `Unfortunately, **${facility.name}** doesn't have any available slots in the next 2 weeks. Would you like to try another facility?`,
-        inlineUI: {
-          type: 'QUICK_REPLIES',
-          options: [
-            { id: '1', label: '🏥 Try Another Facility', value: 'book appointment' },
-            { id: '2', label: '❌ Cancel', value: 'cancel' },
-          ],
-        },
-      };
-    }
-
     return {
-      message: `Great choice! **${facility.name}** has available slots. When would you like to go?`,
+      message: `Great choice! **${facility.name}** 🏥\n\nWhen would you like to request your appointment?`,
       inlineUI: {
         type: 'DATE_PICKER',
         availableDates: dates,
@@ -462,10 +449,9 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     };
   }
 
-  // Handle date selection
-  async handleDateSelection(date: string): Promise<AramonResponse> {
+  // Handle date selection - now shows preferred time slots
+  handleDateSelection(date: string): AramonResponse {
     const state = this.stateManager.getState();
-    const facilityId = state.bookingData?.facilityId || '';
 
     this.stateManager.setState({
       selectedDate: date,
@@ -476,8 +462,8 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       },
     });
 
-    // Fetch available time slots from database
-    const timeSlots = await appointmentServiceDB.getAvailableSlots(facilityId, date);
+    // Get standard time slots (not from DB)
+    const timeSlots = appointmentServiceDB.getPreferredTimeSlots();
 
     const formattedDate = new Date(date).toLocaleDateString('en-US', {
       weekday: 'long',
@@ -488,25 +474,12 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     this.conversationHistory.push({
       id: Date.now().toString(),
       role: 'assistant',
-      content: `Here are the available time slots for ${formattedDate}:`,
+      content: `What time would you prefer for ${formattedDate}?`,
       timestamp: new Date(),
     });
 
-    if (timeSlots.length === 0) {
-      return {
-        message: `No available slots for **${formattedDate}**. Please select another date.`,
-        inlineUI: {
-          type: 'QUICK_REPLIES',
-          options: [
-            { id: '1', label: '📅 Pick Another Date', value: 'pick another date' },
-            { id: '2', label: '❌ Cancel', value: 'cancel' },
-          ],
-        },
-      };
-    }
-
     return {
-      message: `Here are the available time slots for **${formattedDate}**:`,
+      message: `What time would you prefer for **${formattedDate}**?`,
       inlineUI: {
         type: 'TIME_SLOT_PICKER',
         slots: timeSlots,
@@ -524,6 +497,7 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
   }
 
   // Handle time selection - now stores the slot ID for booking
+  // Handle time selection - stores preferred time
   handleTimeSelection(time: string, slotId?: string): AramonResponse {
     const state = this.stateManager.getState();
     const facility = state.selectedFacility;
@@ -547,7 +521,6 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       bookingData: {
         ...state.bookingData,
         timeSlot: time,
-        slotId: slotId, // Store the database slot ID
         step: 'CONFIRM',
       },
     });
@@ -555,12 +528,12 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     this.conversationHistory.push({
       id: Date.now().toString(),
       role: 'assistant',
-      content: `Perfect! Here's your appointment summary. Please confirm:`,
+      content: `Perfect! Here's your appointment request summary. Please confirm:`,
       timestamp: new Date(),
     });
 
     return {
-      message: `Perfect! Here's your appointment summary:`,
+      message: `Perfect! Here's your appointment request:`,
       inlineUI: {
         type: 'CONFIRMATION_CARD',
         appointment: appointmentSummary,
@@ -576,26 +549,27 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     };
   }
 
-  // Confirm booking - now async and saves to database
+  // Confirm booking - submits appointment REQUEST (pending approval)
   async confirmBooking(): Promise<AramonResponse> {
     const state = this.stateManager.getState();
     const summary = state.pendingConfirmation;
-    const slotId = state.bookingData?.slotId;
 
-    if (!summary || !slotId) {
+    if (!summary) {
       return { message: 'No pending appointment to confirm. Please start over.' };
     }
 
-    // Book the appointment in the database
-    const result = await appointmentServiceDB.bookAppointment(
-      slotId,
+    // Submit the appointment request (status will be 'pending')
+    const result = await appointmentServiceDB.requestAppointment(
+      summary.facilityId,
+      summary.date,
+      summary.time,
       summary.reason,
       undefined // notes
     );
 
     if (!result.success) {
       return {
-        message: `❌ ${result.error || 'Failed to book appointment'}. Please try again or select a different time slot.`,
+        message: `❌ ${result.error || 'Failed to submit appointment request'}. Please try again.`,
         inlineUI: {
           type: 'QUICK_REPLIES',
           options: [
@@ -614,12 +588,12 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     this.conversationHistory.push({
       id: Date.now().toString(),
       role: 'assistant',
-      content: `Your appointment has been confirmed!`,
+      content: `Your appointment request has been submitted!`,
       timestamp: new Date(),
     });
 
     return {
-      message: `✅ **Your appointment is confirmed!**\n\n📍 ${summary.facilityName}\n📅 ${formattedDate}\n⏰ ${summary.time}\n\nI'll send you a reminder before your appointment. Don't forget to bring a valid ID!\n\nIs there anything else I can help you with?`,
+      message: `⏳ **Your appointment request has been submitted!**\n\n📍 ${summary.facilityName}\n📅 ${formattedDate}\n⏰ ${summary.time}\n\n**Status:** Pending Approval\n\nThe health facility will review your request and confirm the appointment. You'll be notified once it's approved.\n\nIs there anything else I can help you with?`,
       inlineUI: {
         type: 'QUICK_REPLIES',
         options: [
@@ -726,7 +700,7 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     if (dbAppointments.length === 0) {
       return {
         message:
-          "You don't have any upcoming appointments. Would you like to book one?",
+          "You don't have any upcoming appointments. Would you like to request one?",
         inlineUI: {
           type: 'QUICK_REPLIES',
           options: [
@@ -746,12 +720,25 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       date: apt.appointment_date,
       time: apt.time_slot,
       reason: apt.service_type || 'General Consultation',
-      status: apt.status === 'booked' ? 'confirmed' : apt.status as any,
+      status: apt.status, // Status types now match between DB and app
       createdAt: new Date(apt.created_at),
     }));
 
+    // Count booked vs completed appointments
+    const bookedCount = appointments.filter(a => a.status === 'booked').length;
+    const completedCount = appointments.filter(a => a.status === 'completed').length;
+
+    let statusMessage = `Here are your appointments:`;
+    if (bookedCount > 0 && completedCount > 0) {
+      statusMessage = `Here are your appointments (${bookedCount} upcoming, ${completedCount} completed):`;
+    } else if (bookedCount > 0) {
+      statusMessage = `Here are your upcoming appointments:`;
+    } else if (completedCount > 0) {
+      statusMessage = `Here are your completed appointments:`;
+    }
+
     return {
-      message: `Here are your upcoming appointments:`,
+      message: statusMessage,
       inlineUI: {
         type: 'APPOINTMENT_LIST',
         appointments,
@@ -797,7 +784,7 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       date: apt.appointment_date,
       time: apt.time_slot,
       reason: apt.service_type || 'General Consultation',
-      status: 'confirmed',
+      status: apt.status,
       createdAt: new Date(apt.created_at),
     }));
 
@@ -1140,7 +1127,7 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
               date: apt.appointment_date,
               time: apt.time_slot,
               reason: apt.service_type || 'General Consultation',
-              status: 'confirmed',
+              status: apt.status,
               createdAt: new Date(apt.created_at),
             },
           };

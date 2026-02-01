@@ -1,11 +1,14 @@
 // ============================================================================
 // APPOINTMENT SERVICE (DATABASE VERSION)
-// Handles real appointment booking with Supabase
+// Handles appointment requests with Supabase - CMS approval workflow
 // ============================================================================
 
 import { supabase } from '../lib/supabase';
 import { authService } from './authService';
 import type { TimeSlot, DateOption, AppointmentSummary } from '../types/aramon';
+
+// Appointment status types (matching database schema)
+export type AppointmentStatus = 'available' | 'booked' | 'completed' | 'cancelled' | 'no_show';
 
 // Appointment type from database
 export interface DBAppointment {
@@ -15,7 +18,7 @@ export interface DBAppointment {
   appointment_date: string;
   time_slot: string;
   service_type: string | null;
-  status: 'available' | 'booked' | 'completed' | 'cancelled' | 'no_show';
+  status: AppointmentStatus;
   booked_at: string | null;
   notes: string | null;
   created_at: string;
@@ -30,84 +33,62 @@ export interface AppointmentWithFacility extends DBAppointment {
 
 class AppointmentServiceDB {
   // ============================================================================
-  // GET AVAILABLE SLOTS FOR A FACILITY ON A DATE
-  // Health workers create slots with status='available', we fetch them
+  // GET NEXT 30 DAYS FOR DATE SELECTION
+  // User can request any date in the next 30 days
   // ============================================================================
-  async getAvailableSlots(facilityId: string, date: string): Promise<TimeSlot[]> {
-    try {
-      const { data, error } = await supabase
-        .from('appointments' as any)
-        .select('id, time_slot, status')
-        .eq('facility_id', facilityId)
-        .eq('appointment_date', date)
-        .eq('status', 'available')
-        .order('time_slot') as { data: DBAppointment[] | null; error: any };
+  getAvailableDates(daysAhead = 30): DateOption[] {
+    const dates: DateOption[] = [];
+    const today = new Date();
 
-      if (error) {
-        console.error('Error fetching available slots:', error);
-        return [];
-      }
+    for (let i = 1; i <= daysAhead; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() + i);
+      
+      // Skip Sundays (optional - remove if facilities work on Sundays)
+      if (date.getDay() === 0) continue;
 
-      return (data || []).map(slot => ({
-        id: slot.id,
-        time: slot.time_slot,
+      const dateStr = date.toISOString().split('T')[0];
+      dates.push({
+        date: dateStr,
+        dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        dayNumber: date.getDate(),
+        monthName: date.toLocaleDateString('en-US', { month: 'short' }),
         available: true,
-      }));
-    } catch (error) {
-      console.error('Error fetching available slots:', error);
-      return [];
-    }
-  }
-
-  // ============================================================================
-  // GET AVAILABLE DATES FOR A FACILITY
-  // Returns dates that have at least one available slot
-  // ============================================================================
-  async getAvailableDates(facilityId: string, daysAhead = 14): Promise<DateOption[]> {
-    try {
-      const today = new Date();
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + daysAhead);
-
-      const { data, error } = await supabase
-        .from('appointments' as any)
-        .select('appointment_date')
-        .eq('facility_id', facilityId)
-        .eq('status', 'available')
-        .gte('appointment_date', today.toISOString().split('T')[0])
-        .lte('appointment_date', endDate.toISOString().split('T')[0])
-        .order('appointment_date') as { data: { appointment_date: string }[] | null; error: any };
-
-      if (error) {
-        console.error('Error fetching available dates:', error);
-        return [];
-      }
-
-      // Group by unique dates
-      const uniqueDates = [...new Set((data || []).map(d => d.appointment_date))];
-
-      return uniqueDates.map(dateStr => {
-        const date = new Date(dateStr);
-        return {
-          date: dateStr,
-          dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
-          dayNumber: date.getDate(),
-          monthName: date.toLocaleDateString('en-US', { month: 'short' }),
-          available: true,
-        };
       });
-    } catch (error) {
-      console.error('Error fetching available dates:', error);
-      return [];
     }
+
+    return dates;
   }
 
   // ============================================================================
-  // BOOK AN APPOINTMENT
-  // Updates an available slot to booked status
+  // GET PREFERRED TIME SLOTS
+  // Standard time slots for user to select their preferred time
   // ============================================================================
-  async bookAppointment(
-    slotId: string,
+  getPreferredTimeSlots(): TimeSlot[] {
+    const slots: TimeSlot[] = [
+      // Morning slots
+      { id: 'slot-8am', time: '8:00 AM', available: true },
+      { id: 'slot-9am', time: '9:00 AM', available: true },
+      { id: 'slot-10am', time: '10:00 AM', available: true },
+      { id: 'slot-11am', time: '11:00 AM', available: true },
+      // Afternoon slots
+      { id: 'slot-1pm', time: '1:00 PM', available: true },
+      { id: 'slot-2pm', time: '2:00 PM', available: true },
+      { id: 'slot-3pm', time: '3:00 PM', available: true },
+      { id: 'slot-4pm', time: '4:00 PM', available: true },
+    ];
+
+    return slots;
+  }
+
+  // ============================================================================
+  // REQUEST AN APPOINTMENT
+  // Creates a new appointment with 'booked' status
+  // ============================================================================
+  async requestAppointment(
+    facilityId: string,
+    date: string,
+    timeSlot: string,
     serviceType?: string,
     notes?: string
   ): Promise<{
@@ -117,64 +98,68 @@ class AppointmentServiceDB {
   }> {
     const residentId = authService.getResidentId();
     if (!residentId) {
-      return { success: false, error: 'Please log in to book an appointment' };
+      return { success: false, error: 'Please log in to request an appointment' };
     }
 
     try {
-      // First check if slot is still available
-      const { data: slot, error: slotError } = await supabase
-        .from('appointments' as any)
+      // Check if user already has a booked appointment at this facility on this date
+      const { data: existing } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('facility_id', facilityId)
+        .eq('resident_id', residentId)
+        .eq('appointment_date', date)
+        .eq('status', 'booked')
+        .maybeSingle();
+
+      if (existing) {
+        return { success: false, error: 'You already have a booked appointment at this facility on this date' };
+      }
+
+      // Create the appointment request
+      const insertData = {
+        facility_id: facilityId,
+        resident_id: residentId,
+        appointment_date: date,
+        time_slot: timeSlot,
+        service_type: serviceType || 'General Consultation',
+        status: 'booked' as const,
+        notes: notes,
+        booked_at: new Date().toISOString(),
+      };
+
+      const { data: newAppointment, error: insertError } = await (supabase
+        .from('appointments') as any)
+        .insert(insertData)
         .select('*, health_facilities(name, address)')
-        .eq('id', slotId)
-        .single() as { data: (DBAppointment & { health_facilities: { name: string; address: string } }) | null; error: any };
+        .single() as {
+          data: (DBAppointment & { health_facilities: { name: string; address: string } | null }) | null;
+          error: any;
+        };
 
-      if (slotError || !slot) {
-        return { success: false, error: 'Appointment slot not found' };
+      if (insertError || !newAppointment) {
+        console.error('Error creating appointment request:', insertError);
+        return { success: false, error: 'Failed to submit appointment request' };
       }
 
-      if (slot.status !== 'available') {
-        return { success: false, error: 'This slot is no longer available' };
-      }
-
-      // Book the slot
-      const { data: bookedAppointment, error: bookError } = await (supabase
-        .from('appointments' as any) as any)
-        .update({
-          resident_id: residentId,
-          status: 'booked',
-          service_type: serviceType,
-          notes: notes,
-          booked_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', slotId)
-        .eq('status', 'available') // Double-check it's still available
-        .select('*, health_facilities(name, address)')
-        .single() as { data: (DBAppointment & { health_facilities: { name: string; address: string } }) | null; error: any };
-
-      if (bookError || !bookedAppointment) {
-        console.error('Error booking appointment:', bookError);
-        return { success: false, error: 'Failed to book appointment. It may have been taken.' };
-      }
-
-      const facility = bookedAppointment.health_facilities;
+      const facility = newAppointment.health_facilities;
 
       return {
         success: true,
         appointment: {
-          ...bookedAppointment,
+          ...newAppointment,
           facility_name: facility?.name || 'Unknown Facility',
           facility_address: facility?.address || 'Unknown Address',
-        },
+        } as AppointmentWithFacility,
       };
     } catch (error) {
-      console.error('Error booking appointment:', error);
-      return { success: false, error: 'An error occurred while booking' };
+      console.error('Error requesting appointment:', error);
+      return { success: false, error: 'An error occurred while submitting your request' };
     }
   }
 
   // ============================================================================
-  // GET RESIDENT'S APPOINTMENTS
+  // GET RESIDENT'S APPOINTMENTS (All statuses)
   // ============================================================================
   async getMyAppointments(): Promise<AppointmentWithFacility[]> {
     const residentId = authService.getResidentId();
@@ -184,13 +169,13 @@ class AppointmentServiceDB {
 
     try {
       const { data, error } = await supabase
-        .from('appointments' as any)
+        .from('appointments')
         .select('*, health_facilities(name, address)')
         .eq('resident_id', residentId)
         .in('status', ['booked', 'completed'])
-        .order('appointment_date', { ascending: true }) as { 
-          data: (DBAppointment & { health_facilities: { name: string; address: string } })[] | null; 
-          error: any 
+        .order('appointment_date', { ascending: true }) as {
+          data: (DBAppointment & { health_facilities: { name: string; address: string } | null })[] | null;
+          error: any;
         };
 
       if (error) {
@@ -204,7 +189,7 @@ class AppointmentServiceDB {
           ...apt,
           facility_name: facility?.name || 'Unknown Facility',
           facility_address: facility?.address || 'Unknown Address',
-        };
+        } as AppointmentWithFacility;
       });
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -213,7 +198,7 @@ class AppointmentServiceDB {
   }
 
   // ============================================================================
-  // GET UPCOMING APPOINTMENTS
+  // GET UPCOMING APPOINTMENTS (Booked)
   // ============================================================================
   async getUpcomingAppointments(): Promise<AppointmentWithFacility[]> {
     const residentId = authService.getResidentId();
@@ -225,14 +210,14 @@ class AppointmentServiceDB {
 
     try {
       const { data, error } = await supabase
-        .from('appointments' as any)
+        .from('appointments')
         .select('*, health_facilities(name, address)')
         .eq('resident_id', residentId)
         .eq('status', 'booked')
         .gte('appointment_date', today)
-        .order('appointment_date', { ascending: true }) as { 
-          data: (DBAppointment & { health_facilities: { name: string; address: string } })[] | null; 
-          error: any 
+        .order('appointment_date', { ascending: true }) as {
+          data: (DBAppointment & { health_facilities: { name: string; address: string } | null })[] | null;
+          error: any;
         };
 
       if (error) {
@@ -246,7 +231,7 @@ class AppointmentServiceDB {
           ...apt,
           facility_name: facility?.name || 'Unknown Facility',
           facility_address: facility?.address || 'Unknown Address',
-        };
+        } as AppointmentWithFacility;
       });
     } catch (error) {
       console.error('Error fetching upcoming appointments:', error);
@@ -256,6 +241,7 @@ class AppointmentServiceDB {
 
   // ============================================================================
   // CANCEL APPOINTMENT
+  // User can cancel their own booked appointments
   // ============================================================================
   async cancelAppointment(appointmentId: string): Promise<{
     success: boolean;
@@ -267,19 +253,15 @@ class AppointmentServiceDB {
     }
 
     try {
-      // Make the slot available again
       const { error } = await (supabase
-        .from('appointments' as any) as any)
+        .from('appointments') as any)
         .update({
-          resident_id: null,
-          status: 'available',
-          service_type: null,
-          notes: null,
-          booked_at: null,
+          status: 'cancelled',
           updated_at: new Date().toISOString(),
         })
         .eq('id', appointmentId)
-        .eq('resident_id', residentId); // Ensure user owns this appointment
+        .eq('resident_id', residentId) // Ensure user owns this appointment
+        .eq('status', 'booked') as { error: any }; // Can only cancel booked appointments
 
       if (error) {
         console.error('Error cancelling appointment:', error);
@@ -290,6 +272,26 @@ class AppointmentServiceDB {
     } catch (error) {
       console.error('Error cancelling appointment:', error);
       return { success: false, error: 'An error occurred while cancelling' };
+    }
+  }
+
+  // ============================================================================
+  // GET STATUS DISPLAY INFO
+  // ============================================================================
+  getStatusDisplay(status: AppointmentStatus): { label: string; color: string; emoji: string } {
+    switch (status) {
+      case 'available':
+        return { label: 'Available', color: '#22c55e', emoji: '📅' };
+      case 'booked':
+        return { label: 'Booked', color: '#3b82f6', emoji: '✅' };
+      case 'completed':
+        return { label: 'Completed', color: '#6b7280', emoji: '✔️' };
+      case 'cancelled':
+        return { label: 'Cancelled', color: '#6b7280', emoji: '🚫' };
+      case 'no_show':
+        return { label: 'No Show', color: '#ef4444', emoji: '⚠️' };
+      default:
+        return { label: status, color: '#6b7280', emoji: '❓' };
     }
   }
 
