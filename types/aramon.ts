@@ -143,11 +143,11 @@ export interface Appointment {
 }
 
 export type AppointmentStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'completed'
-  | 'cancelled'
-  | 'rescheduled';
+  | 'available'  // Appointment slot is available for booking
+  | 'booked'     // Appointment is booked by a resident
+  | 'completed'  // Appointment completed
+  | 'cancelled'  // Appointment was cancelled
+  | 'no_show';   // Resident didn't show up
 
 export interface AppointmentSummary {
   facilityId: string;

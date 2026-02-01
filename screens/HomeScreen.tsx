@@ -129,10 +129,10 @@ export default function HomeScreen() {
 
     try {
       const response = await aramonAI.sendMessage(text);
-      addAIResponse(response);
+      await addAIResponse(response);
     } catch (error) {
       console.error('Error:', error);
-      addAIResponse({
+      await addAIResponse({
         message: "I'm having trouble connecting. Please try again.",
       });
     } finally {
@@ -140,7 +140,7 @@ export default function HomeScreen() {
     }
   };
 
-  const addAIResponse = (response: AramonResponse) => {
+  const addAIResponse = async (response: AramonResponse) => {
     const aiMessage: ChatMessage = {
       id: (Date.now() + 1).toString(),
       role: 'assistant',
@@ -156,6 +156,60 @@ export default function HomeScreen() {
       setTimeout(() => {
         navigation.navigate(screen, params);
       }, 500); // Small delay so user sees the message first
+    }
+
+    // Handle booking appointment action - fetch facilities and update UI
+    if (response.action?.type === 'BOOK_APPOINTMENT' && response.action.data.step === 'SELECT_FACILITY') {
+      const reason = response.action.data.reason || 'General Consultation';
+      try {
+        const facilities = await aramonAI.getFacilitiesForBooking(reason);
+        if (facilities.length > 0) {
+          // Update the message with actual facility picker
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            if (updated[lastIndex]?.role === 'assistant') {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: `I'd be happy to help you book an appointment${reason !== 'General Consultation' ? ` for ${reason}` : ''}! 🏥\n\nHere are available health facilities near you:`,
+                inlineUI: {
+                  type: 'FACILITY_PICKER',
+                  facilities,
+                },
+              };
+            }
+            return updated;
+          });
+        } else {
+          // No facilities found
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            if (updated[lastIndex]?.role === 'assistant') {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: "I couldn't find any available facilities at the moment. Please try again later or contact a health center directly.",
+                inlineUI: undefined,
+              };
+            }
+            return updated;
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching facilities:', error);
+        setMessages((prev) => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          if (updated[lastIndex]?.role === 'assistant') {
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              content: "I'm having trouble loading facilities. Please try again.",
+              inlineUI: undefined,
+            };
+          }
+          return updated;
+        });
+      }
     }
   };
 
@@ -178,7 +232,7 @@ export default function HomeScreen() {
     setIsLoading(true);
     const response = await aramonAI.handleFacilitySelection(facility);
     setIsLoading(false);
-    addAIResponse(response);
+    await addAIResponse(response);
   };
 
   const handleDateSelect = async (date: string) => {
@@ -198,13 +252,12 @@ export default function HomeScreen() {
       },
     ]);
 
-    setIsLoading(true);
-    const response = await aramonAI.handleDateSelection(date);
-    setIsLoading(false);
-    addAIResponse(response);
+    // handleDateSelection is now synchronous
+    const response = aramonAI.handleDateSelection(date);
+    await addAIResponse(response);
   };
 
-  const handleTimeSelect = (time: string, slotId?: string) => {
+  const handleTimeSelect = async (time: string, slotId?: string) => {
     setMessages((prev) => [
       ...prev,
       {
@@ -216,7 +269,7 @@ export default function HomeScreen() {
     ]);
 
     const response = aramonAI.handleTimeSelection(time, slotId);
-    addAIResponse(response);
+    await addAIResponse(response);
   };
 
   const handleConfirmBooking = async () => {
@@ -233,10 +286,10 @@ export default function HomeScreen() {
     setIsLoading(true);
     const response = await aramonAI.confirmBooking();
     setIsLoading(false);
-    addAIResponse(response);
+    await addAIResponse(response);
   };
 
-  const handleCancelBooking = () => {
+  const handleCancelBooking = async () => {
     setMessages((prev) => [
       ...prev,
       {
@@ -248,7 +301,7 @@ export default function HomeScreen() {
     ]);
 
     const response = aramonAI.cancelBookingFlow();
-    addAIResponse(response);
+    await addAIResponse(response);
   };
 
   const handleQuickReply = async (value: string) => {
@@ -269,7 +322,7 @@ export default function HomeScreen() {
     setIsLoading(true);
     const response = await aramonAI.cancelAppointment(appointmentId);
     setIsLoading(false);
-    addAIResponse(response);
+    await addAIResponse(response);
   };
 
   const handleClearChat = async () => {

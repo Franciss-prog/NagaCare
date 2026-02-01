@@ -38,13 +38,16 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   const getStatusColor = () => {
     switch (appointment.status) {
       case 'confirmed':
-        return { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Confirmed' };
+      case 'approved':
+        return { bg: 'bg-green-500/20', text: 'text-green-400', label: '✅ Approved' };
       case 'pending':
-        return { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'Pending' };
+        return { bg: 'bg-amber-500/20', text: 'text-amber-400', label: '⏳ Pending' };
       case 'completed':
-        return { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Completed' };
+        return { bg: 'bg-blue-500/20', text: 'text-blue-400', label: '✔️ Completed' };
       case 'cancelled':
-        return { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Cancelled' };
+        return { bg: 'bg-red-500/20', text: 'text-red-400', label: '🚫 Cancelled' };
+      case 'rejected':
+        return { bg: 'bg-red-500/20', text: 'text-red-400', label: '❌ Rejected' };
       case 'rescheduled':
         return { bg: 'bg-purple-500/20', text: 'text-purple-400', label: 'Rescheduled' };
       default:
