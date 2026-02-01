@@ -11,7 +11,7 @@ export interface Database {
           id: string;
           username: string;
           password_hash: string;
-          role: 'user' | 'admin' | 'barangay_admin';
+          user_role: 'staff' | 'residence';
           assigned_barangay: string;
           created_at: string;
           updated_at: string;
@@ -20,7 +20,7 @@ export interface Database {
           id?: string;
           username: string;
           password_hash: string;
-          role: 'user' | 'admin' | 'barangay_admin';
+          user_role?: 'staff' | 'residence';
           assigned_barangay: string;
           created_at?: string;
           updated_at?: string;
@@ -29,7 +29,7 @@ export interface Database {
           id?: string;
           username?: string;
           password_hash?: string;
-          role?: 'user' | 'admin' | 'barangay_admin';
+          user_role?: 'staff' | 'residence';
           assigned_barangay?: string;
           created_at?: string;
           updated_at?: string;

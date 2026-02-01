@@ -198,7 +198,7 @@ class AuthService {
         .insert({
           username: data.username,
           password_hash: passwordHash,
-          role: 'user',
+          user_role: 'residence',
           assigned_barangay: data.barangay,
         })
         .select()
