@@ -15,11 +15,14 @@ import {
   StatusBar,
   Linking,
   Image,
+  Modal,
 } from 'react-native';
 import {
   User,
   Trash2,
   Phone,
+  Globe,
+  Check,
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ChatBubble } from '../components/ChatBubble';
@@ -36,7 +39,7 @@ import {
   QuickReplies,
   EmergencyCard,
 } from '../components/chat';
-import { InlineUIComponent, ActionRequest } from '../types/aramon';
+import { InlineUIComponent, ActionRequest, AppLanguage, LANGUAGE_OPTIONS } from '../types/aramon';
 
 // ============================================================================
 // TYPES
@@ -55,6 +58,8 @@ export default function HomeScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [currentLanguage, setCurrentLanguage] = useState<AppLanguage>('english');
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   // ============================================================================
@@ -451,6 +456,18 @@ export default function HomeScreen() {
 
           {/* Right: Actions */}
           <View className="flex-row items-center gap-2">
+            {/* Language Selector */}
+            <TouchableOpacity
+              onPress={() => setShowLanguagePicker(true)}
+              activeOpacity={0.7}
+              className="bg-slate-800/60 rounded-xl px-2.5 py-2 border border-slate-700/50 flex-row items-center"
+            >
+              <Globe size={16} {...{ color: "#94a3b8" }} />
+              <Text className="text-slate-400 text-xs ml-1.5">
+                {LANGUAGE_OPTIONS.find(l => l.id === currentLanguage)?.flag}
+              </Text>
+            </TouchableOpacity>
+
             {/* Clear Chat */}
             <TouchableOpacity
               onPress={handleClearChat}
@@ -551,6 +568,65 @@ export default function HomeScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Language Picker Modal */}
+      <Modal
+        visible={showLanguagePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLanguagePicker(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setShowLanguagePicker(false)}
+          className="flex-1 bg-black/60 justify-center items-center px-8"
+        >
+          <View className="bg-[#1a2235] rounded-3xl w-full border border-slate-700/50 overflow-hidden">
+            {/* Header */}
+            <View className="px-5 pt-5 pb-3">
+              <Text className="text-white text-lg font-bold">Choose Language</Text>
+              <Text className="text-slate-400 text-sm mt-1">
+                Aramon will respond in your chosen language
+              </Text>
+            </View>
+
+            {/* Language Options */}
+            {LANGUAGE_OPTIONS.map((lang) => (
+              <TouchableOpacity
+                key={lang.id}
+                onPress={() => {
+                  setCurrentLanguage(lang.id);
+                  aramonAI.setLanguage(lang.id);
+                  setShowLanguagePicker(false);
+                }}
+                className={`flex-row items-center px-5 py-4 border-t border-slate-700/30 ${
+                  currentLanguage === lang.id ? 'bg-cyan-600/10' : ''
+                }`}
+              >
+                <Text className="text-2xl mr-3">{lang.flag}</Text>
+                <View className="flex-1">
+                  <Text className={`text-base font-semibold ${
+                    currentLanguage === lang.id ? 'text-cyan-400' : 'text-white'
+                  }`}>
+                    {lang.label}
+                  </Text>
+                </View>
+                {currentLanguage === lang.id && (
+                  <Check size={20} {...{ color: "#22d3ee" }} />
+                )}
+              </TouchableOpacity>
+            ))}
+
+            {/* Cancel */}
+            <TouchableOpacity
+              onPress={() => setShowLanguagePicker(false)}
+              className="py-4 border-t border-slate-700/30"
+            >
+              <Text className="text-slate-400 text-center font-semibold">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Chat Input */}
       <View

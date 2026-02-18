@@ -6,6 +6,24 @@
 import { HealthFacility } from '../services/facilityService';
 
 // ============================================================================
+// LANGUAGE TYPES
+// ============================================================================
+
+export type AppLanguage = 'english' | 'tagalog' | 'bicolano';
+
+export interface LanguageOption {
+  id: AppLanguage;
+  label: string;
+  flag: string;
+}
+
+export const LANGUAGE_OPTIONS: LanguageOption[] = [
+  { id: 'english', label: 'English', flag: '🇺🇸' },
+  { id: 'tagalog', label: 'Tagalog', flag: '🇵🇭' },
+  { id: 'bicolano', label: 'Bicolano', flag: '🌴' },
+];
+
+// ============================================================================
 // MESSAGE TYPES
 // ============================================================================
 

@@ -16,6 +16,7 @@ import {
   AppointmentSummary,
   QuickReply,
   Appointment,
+  AppLanguage,
 } from '../types/aramon';
 import { facilityService, HealthFacility } from './facilityService';
 import { appointmentServiceDB, AppointmentWithFacility } from './appointmentServiceDB';
@@ -104,6 +105,34 @@ You complement health workers but do NOT replace medical professionals. For emer
 Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
 
 // ============================================================================
+// LANGUAGE PROMPT INSTRUCTIONS
+// ============================================================================
+
+const LANGUAGE_PROMPTS: Record<AppLanguage, string> = {
+  english: '',
+  tagalog: `
+
+LANGUAGE INSTRUCTION:
+You MUST respond in TAGALOG (Filipino) for ALL your messages. Use natural, conversational Tagalog.
+Examples:
+- Instead of "Hello! How can I help you?" say "Kumusta! Paano kita matutulungan?"
+- Instead of "I'd be happy to help you book an appointment" say "Masaya akong makakatulong sa pagpa-book ng appointment mo"
+- Keep intent JSON blocks in English (the JSON keys/values stay English), but all conversational text must be in Tagalog.
+- Use Tagalog for greetings, explanations, confirmations, health advice, and all other text.`,
+  bicolano: `
+
+LANGUAGE INSTRUCTION:
+You MUST respond in BICOLANO (Bikol Naga dialect) for ALL your messages. Use natural, conversational Bicolano as spoken in Naga City.
+Examples:
+- Instead of "Hello! How can I help you?" say "Kumusta! Paano taka matatabangan?"
+- Instead of "I'd be happy to help you book an appointment" say "Maugma akong makakatabang saimo sa pagpa-book nin appointment mo"
+- Instead of "What can I do for you today?" say "Ano an magigibo ko para saimo ngunyan?"
+- Keep intent JSON blocks in English (the JSON keys/values stay English), but all conversational text must be in Bicolano.
+- Use Bicolano Naga dialect for greetings, explanations, confirmations, health advice, and all other text.
+- Common Bicolano words: tabang (help), marhay (good), ika/saimo (you), ako (I), ngunyan (now/today), digdi (here), duman (there), maray (nice/good), salamat (thanks).`,
+};
+
+// ============================================================================
 // CONVERSATION STATE MANAGEMENT
 // ============================================================================
 
@@ -137,9 +166,23 @@ class ConversationManager {
 export class AramonAI {
   private conversationHistory: Message[] = [];
   private stateManager = new ConversationManager();
+  private currentLanguage: AppLanguage = 'english';
 
   constructor() {
     this.initializeConversation();
+  }
+
+  // Set the active language for AI responses
+  setLanguage(language: AppLanguage): void {
+    this.currentLanguage = language;
+    // Rebuild system prompt with new language
+    if (this.conversationHistory.length > 0 && this.conversationHistory[0].role === 'system') {
+      this.conversationHistory[0].content = this.buildSystemPrompt();
+    }
+  }
+
+  getLanguage(): AppLanguage {
+    return this.currentLanguage;
   }
 
   private initializeConversation(): void {
@@ -175,7 +218,7 @@ CURRENT USER CONTEXT:
 The user is NOT logged in. For booking appointments or applying for Yakap, remind them to log in first.`;
     }
 
-    return ARAMON_SYSTEM_PROMPT + userContext;
+    return ARAMON_SYSTEM_PROMPT + userContext + LANGUAGE_PROMPTS[this.currentLanguage];
   }
 
   // Refresh the system prompt (call after login/logout)
