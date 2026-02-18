@@ -108,7 +108,7 @@ class YakapService {
       }
 
       // Map membership type to database format
-      const membershipTypeMap: Record<string, 'member' | 'dependent' | 'non-member'> = {
+      const membershipTypeMap: Record<string, string> = {
         'Member': 'member',
         'Dependent': 'dependent',
         'Non-Member': 'non-member',

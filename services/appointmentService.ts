@@ -25,7 +25,7 @@ let mockAppointments: Appointment[] = [
     date: '2026-01-29',
     time: '10:30 AM',
     reason: 'General Checkup',
-    status: 'confirmed',
+    status: 'booked',
     createdAt: new Date('2026-01-25'),
     reminderSent: false,
   },
@@ -37,7 +37,7 @@ let mockAppointments: Appointment[] = [
     date: '2026-02-05',
     time: '09:00 AM',
     reason: 'Vaccination',
-    status: 'pending',
+    status: 'booked',
     createdAt: new Date('2026-01-20'),
     reminderSent: false,
   },
@@ -155,7 +155,7 @@ class AppointmentService {
     const newAppointment: Appointment = {
       id: `apt-${Date.now()}`,
       ...summary,
-      status: 'confirmed',
+      status: 'booked',
       createdAt: new Date(),
       reminderSent: false,
     };
@@ -186,7 +186,7 @@ class AppointmentService {
       ...mockAppointments[index],
       date: newDate,
       time: newTime,
-      status: 'confirmed',
+      status: 'booked',
     };
 
     return mockAppointments[index];
