@@ -29,6 +29,7 @@ import { ChatBubble } from '../components/ChatBubble';
 import ChatInput from '../components/ChatInput';
 import { aramonAI, AramonResponse, Message } from '../services/aramonAI';
 import { HealthFacility } from '../services/facilityService';
+import { locationService } from '../services/locationService';
 import {
   FacilityPicker,
   DatePicker,
@@ -167,26 +168,54 @@ export default function HomeScreen() {
     if (response.action?.type === 'BOOK_APPOINTMENT' && response.action.data.step === 'SELECT_FACILITY') {
       const reason = response.action.data.reason || 'General Consultation';
       try {
-        const facilities = await aramonAI.getFacilitiesForBooking(reason);
-        if (facilities.length > 0) {
-          // Update the message with actual facility picker
+        // Get real-time GPS location (requests permission if needed)
+        const userLocation = await locationService.getCurrentLocation();
+        const result = await aramonAI.getFacilitiesForBooking(reason, userLocation);
+
+        if (result.noMatch) {
+          // No facility provides the requested service
+          const serviceLabel = result.classification.label;
           setMessages((prev) => {
             const updated = [...prev];
             const lastIndex = updated.length - 1;
             if (updated[lastIndex]?.role === 'assistant') {
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                content: `I'd be happy to help you book an appointment${reason !== 'General Consultation' ? ` for ${reason}` : ''}! 🏥\n\nHere are available health facilities near you:`,
+                content: `😔 I couldn't find any health facility that provides **${serviceLabel}** services in the area.\n\nThis specific service may not be available at nearby facilities. Would you like to search for something else?`,
+                inlineUI: {
+                  type: 'QUICK_REPLIES',
+                  options: [
+                    { id: '1', label: '🏥 View All Facilities', value: 'find facilities' },
+                    { id: '2', label: '📅 Book Different Service', value: 'book appointment' },
+                    { id: '3', label: '💬 Ask a Question', value: 'What services are available?' },
+                  ],
+                },
+              };
+            }
+            return updated;
+          });
+        } else if (result.facilities.length > 0) {
+          // Found compatible facilities — show them
+          const serviceNote = result.classification.serviceType !== 'general'
+            ? ` for **${result.classification.label}**`
+            : '';
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            if (updated[lastIndex]?.role === 'assistant') {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: `Here are health facilities that provide services${serviceNote}! 🏥\n\nOnly showing facilities that match your need:`,
                 inlineUI: {
                   type: 'FACILITY_PICKER',
-                  facilities,
+                  facilities: result.facilities,
                 },
               };
             }
             return updated;
           });
         } else {
-          // No facilities found
+          // No facilities found at all
           setMessages((prev) => {
             const updated = [...prev];
             const lastIndex = updated.length - 1;
@@ -209,6 +238,142 @@ export default function HomeScreen() {
             updated[lastIndex] = {
               ...updated[lastIndex],
               content: "I'm having trouble loading facilities. Please try again.",
+              inlineUI: undefined,
+            };
+          }
+          return updated;
+        });
+      }
+    }
+
+    // Handle FIND_FACILITIES action — fetch GPS, then search with location
+    if (response.action?.type === 'FIND_FACILITIES') {
+      const searchTerm = response.action.data.query || response.action.data.service || '';
+      try {
+        // Get GPS for distance sorting
+        const userLocation = await locationService.getCurrentLocation();
+        const result = await aramonAI.getFacilitiesForSearch(searchTerm, userLocation);
+
+        if (result.noMatch && result.classification) {
+          // Specific service not found at any facility
+          const serviceLabel = result.classification.label;
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            if (updated[lastIndex]?.role === 'assistant') {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: `😔 I couldn't find any facility nearby that provides **${serviceLabel}** services.\n\nThis service may not be available at health facilities in the area. Would you like to try something else?`,
+                inlineUI: {
+                  type: 'QUICK_REPLIES',
+                  options: [
+                    { id: '1', label: '🏥 View All Facilities', value: 'find facilities' },
+                    { id: '2', label: '📅 Book Appointment', value: 'book appointment' },
+                  ],
+                },
+              };
+            }
+            return updated;
+          });
+        } else if (result.facilities.length > 0) {
+          // Found facilities — show them sorted by distance
+          const serviceNote = result.isFiltered && result.classification && result.classification.serviceType !== 'general'
+            ? ` that provide **${result.classification.label}** services`
+            : '';
+          const distanceNote = userLocation ? ', sorted by distance from you 📍' : '';
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            if (updated[lastIndex]?.role === 'assistant') {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: `Here are health facilities${serviceNote}${distanceNote}! 🏥`,
+                inlineUI: {
+                  type: 'FACILITY_PICKER',
+                  facilities: result.facilities,
+                },
+              };
+            }
+            return updated;
+          });
+        } else {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            if (updated[lastIndex]?.role === 'assistant') {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: "I couldn't find any available facilities at the moment. Please try again later.",
+                inlineUI: undefined,
+              };
+            }
+            return updated;
+          });
+        }
+      } catch (error) {
+        console.error('Error finding facilities:', error);
+        setMessages((prev) => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          if (updated[lastIndex]?.role === 'assistant') {
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              content: "I'm having trouble loading facilities. Please try again.",
+              inlineUI: undefined,
+            };
+          }
+          return updated;
+        });
+      }
+    }
+
+    // Handle GET_LOCATION action — fetch GPS and show address
+    if (response.action?.type === 'GET_LOCATION') {
+      try {
+        const result = await locationService.getLocationWithAddress();
+
+        setMessages((prev) => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          if (updated[lastIndex]?.role === 'assistant') {
+            if (result) {
+              const areaNote = result.area ? ` in **${result.area}**` : '';
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: `📍 Found your location${areaNote}!\n\n**Address:** ${result.address}\n\n**Coordinates:** ${result.location.latitude.toFixed(5)}, ${result.location.longitude.toFixed(5)}${result.location.accuracy ? `\n**Accuracy:** ~${Math.round(result.location.accuracy)}m` : ''}`,
+                inlineUI: {
+                  type: 'QUICK_REPLIES',
+                  options: [
+                    { id: '1', label: '🏥 Find Nearby Facilities', value: 'find facilities near me' },
+                    { id: '2', label: '📅 Book Appointment', value: 'book appointment' },
+                  ],
+                },
+              };
+            } else {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: `😔 I couldn't get your location. This can happen if:\n\n• Location permission was denied\n• GPS/Location services are turned off\n\nPlease enable location access in your device settings and try again!`,
+                inlineUI: {
+                  type: 'QUICK_REPLIES',
+                  options: [
+                    { id: '1', label: '🔄 Try Again', value: 'where am I?' },
+                    { id: '2', label: '🏥 Find Facilities', value: 'find facilities' },
+                  ],
+                },
+              };
+            }
+          }
+          return updated;
+        });
+      } catch (error) {
+        console.error('Error getting location:', error);
+        setMessages((prev) => {
+          const updated = [...prev];
+          const lastIndex = updated.length - 1;
+          if (updated[lastIndex]?.role === 'assistant') {
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              content: "I had trouble getting your location. Please make sure location services are enabled and try again.",
               inlineUI: undefined,
             };
           }

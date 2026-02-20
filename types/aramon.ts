@@ -51,7 +51,8 @@ export type ActionType =
   | 'EMERGENCY_ALERT'
   | 'SHOW_DIRECTIONS'
   | 'NAVIGATE'
-  | 'CHECK_YAKAP_STATUS';
+  | 'CHECK_YAKAP_STATUS'
+  | 'GET_LOCATION';
 
 export type ActionRequest =
   | { type: 'BOOK_APPOINTMENT'; data: BookAppointmentData }
@@ -63,7 +64,8 @@ export type ActionRequest =
   | { type: 'EMERGENCY_ALERT'; data: EmergencyData }
   | { type: 'SHOW_DIRECTIONS'; data: { facilityId: string } }
   | { type: 'NAVIGATE'; data: NavigateData }
-  | { type: 'CHECK_YAKAP_STATUS'; data: Record<string, unknown> };
+  | { type: 'CHECK_YAKAP_STATUS'; data: Record<string, unknown> }
+  | { type: 'GET_LOCATION'; data: Record<string, unknown> };
 
 export interface BookAppointmentData {
   facilityId?: string;
