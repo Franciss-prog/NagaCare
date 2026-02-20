@@ -1,7 +1,7 @@
 // ============================================================================
 // ARAMON AI SERVICE - Enhanced with Intent Detection & Actions
 // The brain of Aramon AI - Naga City's health companion
-// Now connected to Supabase for real data!
+
 // ============================================================================
 
 import Groq from 'groq-sdk';
@@ -16,8 +16,10 @@ import {
   AppointmentSummary,
   QuickReply,
   Appointment,
+  AppLanguage,
 } from '../types/aramon';
-import { facilityService, HealthFacility } from './facilityService';
+import { facilityService, HealthFacility, type FacilityWithDistance, type UserLocation } from './facilityService';
+import { classifyServiceNeed, type ServiceClassification } from './serviceClassifier';
 import { appointmentServiceDB, AppointmentWithFacility } from './appointmentServiceDB';
 import { authService } from './authService';
 import { yakapService } from './yakapService';
@@ -44,6 +46,7 @@ YOUR CAPABILITIES:
 6. Handle emergencies (direct to 911)
 7. Help with Yakap (PhilHealth Konsulta) application
 8. Check Yakap application status
+9. Find the user's current location using GPS (you have access to their device GPS)
 
 INTENT DETECTION - You must identify the user's intent and respond with a JSON block when actions are needed.
 
@@ -64,23 +67,59 @@ INTENT TYPES:
 - EMERGENCY: User describes emergency symptoms (include JSON to show emergency options)
 - YAKAP_APPLY: User wants to apply for Yakap/PhilHealth Konsulta
 - YAKAP_STATUS: User wants to check their Yakap application status
+- GET_LOCATION: User wants to know where they are, their current location, or asks anything about their position/address. You HAVE access to their device GPS — never say you cannot find their location.
 
 BOOKING FLOW:
 When booking, extract any information the user provides:
-- reason/purpose for visit
+- reason/purpose for visit (be specific — e.g. "x-ray", "dental checkup", "prenatal care", "vaccination")
 - preferred facility name
 - preferred date
 - preferred time
 
+IMPORTANT — SERVICE CLASSIFICATION:
+You MUST extract the specific health service the user needs. Be precise with the reason field.
+Map the user's need to one of these service types:
+- medical_consultation: general checkup, consultation, fever, flu, illness
+- dental_service: dental, tooth, teeth, oral health
+- vaccination: vaccine, immunization, booster
+- maternal_care: prenatal, pregnancy, maternity, postnatal
+- laboratory: lab test, blood test, urinalysis, CBC
+- mental_health: counseling, therapy, depression, anxiety
+- emergency: ER, urgent, accident
+- pediatrics: child health, baby, infant, pedia
+- surgery: operation, surgical procedure
+- radiology: x-ray, CT scan, MRI, ultrasound, dialysis
+- pharmacy: medicine, prescription
+- family_planning: contraception, birth control
+- tb_treatment: TB, tuberculosis, DOTS
+- senior_care: elderly, geriatric, senior citizen
+- cardiology: heart, blood pressure, hypertension
+- ob_gyn: OB-GYN, gynecology, women's health
+
+Use the user's EXACT service need as the "reason" in your JSON — do NOT generalize it.
+For example, if the user says "I need an x-ray", use "x-ray" as the reason, NOT "checkup".
+
 Example response for booking:
-"I'd be happy to help you book an appointment for a checkup! Let me find nearby facilities for you.
+"I'd be happy to help you book an appointment for an X-ray! Let me find facilities that offer radiology services.
 \`\`\`json
 {
   "intent": "BOOK_APPOINTMENT",
   "data": {
-    "reason": "checkup",
+    "reason": "x-ray",
     "step": "SELECT_FACILITY"
   }
+}
+\`\`\`"
+
+LOCATION / GPS:
+You CAN access the user's device GPS. When a user asks "where am I?", "what's my location?", "find my location", or anything about their current position, ALWAYS respond with a GET_LOCATION intent. NEVER say you are a text-based AI or that you cannot access their location.
+
+Example response for location:
+"Let me find your current location! 📍
+\`\`\`json
+{
+  "intent": "GET_LOCATION",
+  "data": {}
 }
 \`\`\`"
 
@@ -102,6 +141,34 @@ HEALTH DISCLAIMER:
 You complement health workers but do NOT replace medical professionals. For emergencies, always direct to 911.
 
 Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+
+// ============================================================================
+// LANGUAGE PROMPT INSTRUCTIONS
+// ============================================================================
+
+const LANGUAGE_PROMPTS: Record<AppLanguage, string> = {
+  english: '',
+  tagalog: `
+
+LANGUAGE INSTRUCTION:
+You MUST respond in TAGALOG (Filipino) for ALL your messages. Use natural, conversational Tagalog.
+Examples:
+- Instead of "Hello! How can I help you?" say "Kumusta! Paano kita matutulungan?"
+- Instead of "I'd be happy to help you book an appointment" say "Masaya akong makakatulong sa pagpa-book ng appointment mo"
+- Keep intent JSON blocks in English (the JSON keys/values stay English), but all conversational text must be in Tagalog.
+- Use Tagalog for greetings, explanations, confirmations, health advice, and all other text.`,
+  bicolano: `
+
+LANGUAGE INSTRUCTION:
+You MUST respond in BICOLANO (Bikol Naga dialect) for ALL your messages. Use natural, conversational Bicolano as spoken in Naga City.
+Examples:
+- Instead of "Hello! How can I help you?" say "Kumusta! Paano taka matatabangan?"
+- Instead of "I'd be happy to help you book an appointment" say "Maugma akong makakatabang saimo sa pagpa-book nin appointment mo"
+- Instead of "What can I do for you today?" say "Ano an magigibo ko para saimo ngunyan?"
+- Keep intent JSON blocks in English (the JSON keys/values stay English), but all conversational text must be in Bicolano.
+- Use Bicolano Naga dialect for greetings, explanations, confirmations, health advice, and all other text.
+- Common Bicolano words: tabang (help), marhay (good), ika/saimo (you), ako (I), ngunyan (now/today), digdi (here), duman (there), maray (nice/good), salamat (thanks).`,
+};
 
 // ============================================================================
 // CONVERSATION STATE MANAGEMENT
@@ -137,9 +204,23 @@ class ConversationManager {
 export class AramonAI {
   private conversationHistory: Message[] = [];
   private stateManager = new ConversationManager();
+  private currentLanguage: AppLanguage = 'english';
 
   constructor() {
     this.initializeConversation();
+  }
+
+  // Set the active language for AI responses
+  setLanguage(language: AppLanguage): void {
+    this.currentLanguage = language;
+    // Rebuild system prompt with new language
+    if (this.conversationHistory.length > 0 && this.conversationHistory[0].role === 'system') {
+      this.conversationHistory[0].content = this.buildSystemPrompt();
+    }
+  }
+
+  getLanguage(): AppLanguage {
+    return this.currentLanguage;
   }
 
   private initializeConversation(): void {
@@ -175,7 +256,7 @@ CURRENT USER CONTEXT:
 The user is NOT logged in. For booking appointments or applying for Yakap, remind them to log in first.`;
     }
 
-    return ARAMON_SYSTEM_PROMPT + userContext;
+    return ARAMON_SYSTEM_PROMPT + userContext + LANGUAGE_PROMPTS[this.currentLanguage];
   }
 
   // Refresh the system prompt (call after login/logout)
@@ -294,7 +375,7 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
             return this.initiateBookingFlow(message, data);
 
           case 'FIND_FACILITIES':
-            return await this.handleFindFacilities(message, data);
+            return this.handleFindFacilities(message, data);
 
           case 'SHOW_APPOINTMENTS':
             return await this.handleShowAppointments(message);
@@ -310,6 +391,9 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
 
           case 'YAKAP_STATUS':
             return await this.handleYakapStatus(message);
+
+          case 'GET_LOCATION':
+            return this.handleGetLocation(message);
         }
       } catch (e) {
         console.error('Failed to parse AI intent JSON:', e);
@@ -378,18 +462,21 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     return this.handleFacilitySearchAsync(reason, message);
   }
 
-  // Async facility search for booking
+  // Async facility search for booking — now includes service classification context
   private handleFacilitySearchAsync(reason: string, message?: string): AramonResponse {
-    // This will be populated by the async call in the UI layer
-    // For now, return a loading state
+    const classification = classifyServiceNeed(reason);
+    const serviceLabel = classification.serviceType !== 'general'
+      ? ` for **${classification.label}**`
+      : '';
+
     return {
       message:
         message ||
-        `I'd be happy to help you book an appointment${reason ? ` for ${reason}` : ''}! Let me find available facilities...`,
+        `I'd be happy to help you book an appointment${serviceLabel}! Let me find facilities that offer this service...`,
       inlineUI: {
         type: 'QUICK_REPLIES',
         options: [
-          { id: 'loading', label: '⏳ Loading facilities...', value: 'loading' },
+          { id: 'loading', label: '⏳ Finding matching facilities...', value: 'loading' },
         ],
       },
       action: {
@@ -399,15 +486,22 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     };
   }
 
-  // Called by UI after async facility fetch
-  async getFacilitiesForBooking(reason: string): Promise<HealthFacility[]> {
-    const facilities = await facilityService.searchFacilities(reason);
-    if (facilities.length > 0) {
-      return facilities.slice(0, 5);
-    }
-    // Fallback to all facilities
-    const all = await facilityService.getAllFacilities();
-    return all.slice(0, 5);
+  // Called by UI after async facility fetch — now service-aware
+  async getFacilitiesForBooking(
+    reason: string,
+    userLocation?: UserLocation | null
+  ): Promise<{
+    facilities: FacilityWithDistance[];
+    classification: ServiceClassification;
+    noMatch: boolean;
+  }> {
+    const result = await facilityService.findFacilitiesForService(reason, userLocation);
+
+    return {
+      facilities: result.facilities.slice(0, 5),
+      classification: result.classification,
+      noMatch: result.noMatch,
+    };
   }
 
   // Handle facility selection - now shows date picker for any date
@@ -655,29 +749,57 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
   // OTHER FLOW HANDLERS
   // ============================================================================
 
-  private async handleFindFacilities(
+  private handleFindFacilities(
     message: string,
     data: Record<string, unknown>
-  ): Promise<AramonResponse> {
+  ): AramonResponse {
     const query = (data.query as string) || '';
     const service = data.service as string | undefined;
+    const searchTerm = query || service || '';
 
-    let facilities: HealthFacility[];
-    
-    if (query || service) {
-      facilities = await facilityService.searchFacilities(query || service || '');
-    } else {
-      facilities = await facilityService.getAllFacilities();
+    // Return an action so HomeScreen can fetch GPS first, then search
+    return {
+      message: message || '📍 Let me find health facilities near you...',
+      inlineUI: {
+        type: 'QUICK_REPLIES',
+        options: [
+          { id: 'loading', label: '⏳ Finding nearby facilities...', value: 'loading' },
+        ],
+      },
+      action: {
+        type: 'FIND_FACILITIES',
+        data: { query: searchTerm, service: searchTerm || undefined },
+      },
+    };
+  }
+
+  // Called by HomeScreen after GPS is fetched — searches with location
+  async getFacilitiesForSearch(
+    searchTerm: string,
+    userLocation?: UserLocation | null
+  ): Promise<{
+    facilities: FacilityWithDistance[];
+    classification: ServiceClassification | null;
+    noMatch: boolean;
+    isFiltered: boolean; // true when a specific service was searched
+  }> {
+    if (searchTerm) {
+      const result = await facilityService.findFacilitiesForService(searchTerm, userLocation);
+      return {
+        facilities: result.facilities.slice(0, 5),
+        classification: result.classification,
+        noMatch: result.noMatch,
+        isFiltered: true,
+      };
     }
 
+    // No specific query — show all facilities sorted by distance
+    const facilities = await facilityService.getAllFacilitiesWithDistance(userLocation);
     return {
-      message:
-        message ||
-        `Here are some health facilities I found${query ? ` for "${query}"` : ''}:`,
-      inlineUI: {
-        type: 'FACILITY_PICKER',
-        facilities: facilities.slice(0, 5),
-      },
+      facilities: facilities.slice(0, 5),
+      classification: null,
+      noMatch: false,
+      isFiltered: false,
     };
   }
 
@@ -1026,6 +1148,27 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
         message: `I had trouble checking your application status. Please try again later.`,
       };
     }
+  }
+
+  // ============================================================================
+  // GET LOCATION HANDLER
+  // Returns an action that HomeScreen will handle by fetching GPS
+  // ============================================================================
+
+  private handleGetLocation(message: string): AramonResponse {
+    return {
+      message: message || '📍 Let me find your current location...',
+      inlineUI: {
+        type: 'QUICK_REPLIES',
+        options: [
+          { id: 'loading', label: '📍 Getting your location...', value: 'loading' },
+        ],
+      },
+      action: {
+        type: 'GET_LOCATION',
+        data: {},
+      },
+    };
   }
 
   // ============================================================================

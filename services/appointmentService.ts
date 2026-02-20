@@ -10,6 +10,7 @@ import {
   DateOption,
 } from '../types/aramon';
 import { healthFacilities, HealthFacility } from '../data/healthFacilities';
+import { classifyServiceNeed, facilityMatchesNeed } from './serviceClassifier';
 
 // ============================================================================
 // MOCK DATA STORAGE
@@ -25,7 +26,7 @@ let mockAppointments: Appointment[] = [
     date: '2026-01-29',
     time: '10:30 AM',
     reason: 'General Checkup',
-    status: 'confirmed',
+    status: 'booked',
     createdAt: new Date('2026-01-25'),
     reminderSent: false,
   },
@@ -37,7 +38,7 @@ let mockAppointments: Appointment[] = [
     date: '2026-02-05',
     time: '09:00 AM',
     reason: 'Vaccination',
-    status: 'pending',
+    status: 'booked',
     createdAt: new Date('2026-01-20'),
     reminderSent: false,
   },
@@ -155,7 +156,7 @@ class AppointmentService {
     const newAppointment: Appointment = {
       id: `apt-${Date.now()}`,
       ...summary,
-      status: 'confirmed',
+      status: 'booked',
       createdAt: new Date(),
       reminderSent: false,
     };
@@ -186,7 +187,7 @@ class AppointmentService {
       ...mockAppointments[index],
       date: newDate,
       time: newTime,
-      status: 'confirmed',
+      status: 'booked',
     };
 
     return mockAppointments[index];
@@ -233,42 +234,29 @@ class AppointmentService {
     return results;
   }
 
-  // Get facilities for a specific service/reason
+  // Get facilities for a specific service/reason — service-compatible filtering
   getFacilitiesForReason(reason: string): HealthFacility[] {
-    const reasonLower = reason.toLowerCase();
+    const classification = classifyServiceNeed(reason);
 
-    // Map common reasons to facility types and services
-    const serviceMapping: Record<string, string[]> = {
-      checkup: ['General Checkup', 'Basic Health Consultation', 'Internal Medicine'],
-      vaccination: ['Vaccination', 'Child Immunization'],
-      prenatal: ['Prenatal Care', 'Maternity', 'Maternal Care'],
-      emergency: ['Emergency Room'],
-      dental: ['Dental'],
-      pediatric: ['Pediatrics', 'Child Immunization'],
-      'blood pressure': ['Blood Pressure Monitoring', 'Basic Health Consultation'],
-      tb: ['TB DOTS Program'],
-      'family planning': ['Family Planning'],
-    };
-
-    // Find matching services
-    const matchingServices: string[] = [];
-    for (const [key, services] of Object.entries(serviceMapping)) {
-      if (reasonLower.includes(key)) {
-        matchingServices.push(...services);
-      }
+    // If classified as general, return all non-pharmacy facilities
+    if (classification.serviceType === 'general') {
+      return healthFacilities
+        .filter((f) => f.type !== 'pharmacy')
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, 5);
     }
 
-    if (matchingServices.length === 0) {
-      // Default to general facilities
-      return this.searchFacilities({ limit: 5 });
+    // Filter to only facilities that support the classified service
+    const compatible = healthFacilities.filter((f) =>
+      facilityMatchesNeed(f.services, classification)
+    );
+
+    if (compatible.length === 0) {
+      // No facility provides this specific service — return empty
+      return [];
     }
 
-    return healthFacilities
-      .filter((f) =>
-        f.services.some((s) =>
-          matchingServices.some((ms) => s.toLowerCase().includes(ms.toLowerCase()))
-        )
-      )
+    return compatible
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 5);
   }
