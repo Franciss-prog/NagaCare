@@ -3,8 +3,11 @@
 // ============================================================================
 
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@env';
+import Constants from 'expo-constants';
 import { Database } from '../types/database';
+
+const SUPABASE_URL = Constants.expoConfig?.extra?.supabaseUrl as string;
+const SUPABASE_ANON_KEY = Constants.expoConfig?.extra?.supabaseAnonKey as string;
 
 // Create Supabase client with type safety
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {

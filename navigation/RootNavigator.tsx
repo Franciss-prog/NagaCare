@@ -11,6 +11,10 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SplashScreen from '../screens/SplashScreen';
 import AuthScreen from '../screens/AuthScreen';
 import YakapFormScreen from '../screens/YakapFormScreen';
+import PregnancyProfileListScreen from '../screens/PregnancyProfileListScreen';
+import PregnancyProfileDetailScreen from '../screens/PregnancyProfileDetailScreen';
+import PregnancyProfileFormScreen from '../screens/PregnancyProfileFormScreen';
+import CityHealthSearchScreen from '../screens/CityHealthSearchScreen';
 import { authService } from '../services/authService';
 
 export type RootStackParamList = {
@@ -18,6 +22,14 @@ export type RootStackParamList = {
   Account: undefined;
   Profile: undefined;
   YakapForm: undefined;
+  PregnancyProfiles: undefined;
+  PregnancyProfileDetail: { profileId: string };
+  PregnancyProfileForm: {
+    profileId?: string;
+    residentId?: string;
+    mode?: 'create' | 'edit';
+  };
+  CityHealthSearch: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -76,14 +88,13 @@ export default function RootNavigator() {
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
-      }}
-    >
+      }}>
       {/* Main AI Chat Screen */}
       <Stack.Screen name="Home" component={HomeScreen} />
-      
+
       {/* Account/Profile Screen */}
-      <Stack.Screen 
-        name="Account" 
+      <Stack.Screen
+        name="Account"
         component={AccountScreen}
         options={{
           presentation: 'modal',
@@ -92,23 +103,55 @@ export default function RootNavigator() {
       />
 
       {/* Profile Screen with Logout */}
-      <Stack.Screen 
+      <Stack.Screen
         name="Profile"
         options={{
           presentation: 'modal',
           animation: 'slide_from_right',
-        }}
-      >
+        }}>
         {() => <ProfileScreen onLogout={handleLogout} />}
       </Stack.Screen>
-      
+
       {/* Yakap Application Form */}
-      <Stack.Screen 
-        name="YakapForm" 
+      <Stack.Screen
+        name="YakapForm"
         component={YakapFormScreen}
         options={{
           presentation: 'fullScreenModal',
           animation: 'slide_from_bottom',
+        }}
+      />
+
+      {/* Pregnancy Profile Screens */}
+      <Stack.Screen
+        name="PregnancyProfiles"
+        component={PregnancyProfileListScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="PregnancyProfileDetail"
+        component={PregnancyProfileDetailScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="PregnancyProfileForm"
+        component={PregnancyProfileFormScreen}
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+
+      {/* City Health Staff Search */}
+      <Stack.Screen
+        name="CityHealthSearch"
+        component={CityHealthSearchScreen}
+        options={{
+          animation: 'slide_from_right',
         }}
       />
     </Stack.Navigator>
