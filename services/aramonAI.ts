@@ -5,7 +5,9 @@
 // ============================================================================
 
 import Groq from 'groq-sdk';
-import { GROQ_API_KEY } from '@env';
+import Constants from 'expo-constants';
+
+const GROQ_API_KEY = Constants.expoConfig?.extra?.groqApiKey as string;
 import {
   Message,
   AramonResponse,
@@ -68,6 +70,7 @@ INTENT TYPES:
 - YAKAP_APPLY: User wants to apply for Yakap/PhilHealth Konsulta
 - YAKAP_STATUS: User wants to check their Yakap application status
 - GET_LOCATION: User wants to know where they are, their current location, or asks anything about their position/address. You HAVE access to their device GPS — never say you cannot find their location.
+- PREGNANCY_PROFILE: User wants to fill out, open, view, or update their pregnancy profile/prenatal form. This covers pregnancy profiling, prenatal records, maternal health forms, and pregnancy history.
 
 BOOKING FLOW:
 When booking, extract any information the user provides:
@@ -136,6 +139,9 @@ EMERGENCY KEYWORDS (trigger emergency response):
 
 YAKAP KEYWORDS (trigger Yakap application flow):
 - yakap, philhealth konsulta, philhealth registration, konsulta program, apply for philhealth, health insurance
+
+PREGNANCY PROFILE KEYWORDS (trigger pregnancy profiling form):
+- pregnancy profile, pregnancy profiling, prenatal profile, prenatal form, maternal profile, pregnancy form, pregnancy record, fill out pregnancy, pregnancy history form, prenatal record
 
 HEALTH DISCLAIMER:
 You complement health workers but do NOT replace medical professionals. For emergencies, always direct to 911.
@@ -276,8 +282,13 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     
     // Handle Yakap-related quick replies
     if (lowerMessage === 'start_yakap' || lowerMessage === 'start application') {
+      const yakapOpenMsg = {
+        english: 'Great! Let me open the Yakap application form for you. 📝',
+        tagalog: 'Ayos! Bubuksan ko ang Yakap application form para sa iyo. 📝',
+        bicolano: 'Maray! Bubukasan ko an Yakap application form para saimo. 📝',
+      };
       return {
-        message: "Great! Let me open the Yakap application form for you. 📝",
+        message: yakapOpenMsg[this.currentLanguage],
         action: {
           type: 'NAVIGATE',
           data: { screen: 'YakapForm' },
@@ -287,6 +298,26 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     
     if (lowerMessage === 'check_yakap_status' || lowerMessage === 'view_yakap_status') {
       return this.handleYakapStatus("Check my Yakap status");
+    }
+
+    // Handle Pregnancy Profile quick replies
+    if (lowerMessage === 'start_pregnancy_profile' || lowerMessage === 'open pregnancy profile') {
+      return this.handlePregnancyProfile(userMessage);
+    }
+
+    if (lowerMessage === 'view_pregnancy_profiles' || lowerMessage === 'my pregnancy profiles') {
+      const msg = {
+        english: 'Opening your pregnancy profiles! 🤰',
+        tagalog: 'Binubuksan ang iyong mga pregnancy profile! 🤰',
+        bicolano: 'Binubukasan an saimong mga pregnancy profile! 🤰',
+      };
+      return {
+        message: msg[this.currentLanguage],
+        action: {
+          type: 'NAVIGATE',
+          data: { screen: 'PregnancyProfiles' },
+        },
+      };
     }
 
     // Add user message to history
@@ -310,6 +341,11 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
           return this.handleYakapStatus(userMessage);
         }
         return this.handleYakapApply(userMessage);
+      }
+
+      // Check for Pregnancy Profile keywords before going to AI
+      if (this.isPregnancyProfileRelated(userMessage)) {
+        return this.handlePregnancyProfile(userMessage);
       }
 
       // Check if this is a response to an ongoing flow
@@ -394,6 +430,9 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
 
           case 'GET_LOCATION':
             return this.handleGetLocation(message);
+
+          case 'PREGNANCY_PROFILE':
+            return this.handlePregnancyProfile(message);
         }
       } catch (e) {
         console.error('Failed to parse AI intent JSON:', e);
@@ -996,9 +1035,136 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     return yakapKeywords.some((keyword) => lowerMessage.includes(keyword));
   }
 
-  private handleEmergency(message: string): AramonResponse {
+  private isPregnancyProfileRelated(message: string): boolean {
+    const keywords = [
+      'pregnancy profile',
+      'pregnancy profiling',
+      'prenatal profile',
+      'prenatal form',
+      'maternal profile',
+      'pregnancy form',
+      'pregnancy record',
+      'fill out pregnancy',
+      'pregnancy history form',
+      'prenatal record',
+      'pregnancy assessment',
+      'maternal health form',
+      'maternity profile',
+    ];
+
+    const lowerMessage = message.toLowerCase();
+    return keywords.some((keyword) => lowerMessage.includes(keyword));
+  }
+
+  private handlePregnancyProfile(message: string): AramonResponse {
+    const lang = this.currentLanguage;
+
+    // -- Localized strings ------------------------------------------------
+    const i18n = {
+      english: {
+        loginRequired: `To access the Pregnancy Profiling form, you'll need to log in first. This ensures your health records are properly secured! 🔐`,
+        loginLabel: '🔑 Login',
+        registerLabel: '📝 Register',
+        staffMessage: `As a City Health staff member, you can manage pregnancy profiles for all residents. 🏥\n\nWould you like to:\n• **Search** for a specific resident's profile\n• **Create** a new pregnancy profile\n• **View all** pregnancy profiles`,
+        searchLabel: '🔍 Search Profiles',
+        newLabel: '📝 New Profile',
+        viewAllLabel: '📋 View All',
+        residentMessage: `I can help you with your **Pregnancy Profile**! 🤰\n\nThis form covers:\n• Pregnancy History (Gravida, Para, etc.)\n• Physical Examination & Vitals\n• Pediatric Assessment (0–24 & 0–60 months)\n• General Survey\n• NCD Risk Assessment\n• Lab Results\n\nWould you like to start filling it out?`,
+        fillOutLabel: '📝 Fill Out Form',
+        viewMineLabel: '📋 View My Profiles',
+      },
+      tagalog: {
+        loginRequired: `Para ma-access ang Pregnancy Profiling form, kailangan mo munang mag-log in. Para masiguradong ligtas ang iyong health records! 🔐`,
+        loginLabel: '🔑 Mag-login',
+        registerLabel: '📝 Mag-register',
+        staffMessage: `Bilang kawani ng City Health, maaari mong i-manage ang pregnancy profiles ng lahat ng residente. 🏥\n\nAno ang gusto mong gawin?\n• **Maghanap** ng profile ng isang residente\n• **Gumawa** ng bagong pregnancy profile\n• **Tingnan lahat** ng pregnancy profiles`,
+        searchLabel: '🔍 Maghanap ng Profile',
+        newLabel: '📝 Bagong Profile',
+        viewAllLabel: '📋 Tingnan Lahat',
+        residentMessage: `Matutulungan kita sa iyong **Pregnancy Profile**! 🤰\n\nSaklaw ng form na ito:\n• Kasaysayan ng Pagbubuntis (Gravida, Para, atbp.)\n• Physical Examination at Vitals\n• Pediatric Assessment (0–24 at 0–60 na buwan)\n• General Survey\n• NCD Risk Assessment\n• Lab Results\n\nGusto mo na bang simulan?`,
+        fillOutLabel: '📝 Sagutan ang Form',
+        viewMineLabel: '📋 Tingnan ang Aking Profiles',
+      },
+      bicolano: {
+        loginRequired: `Para ma-access an Pregnancy Profiling form, kaipuhan mo munang mag-log in. Para segurado na ligtas an saimong health records! 🔐`,
+        loginLabel: '🔑 Mag-login',
+        registerLabel: '📝 Mag-register',
+        staffMessage: `Bilang empleyado kan City Health, pwede mong i-manage an pregnancy profiles kan gabos na residente. 🏥\n\nAno an gusto mong gibuhon?\n• **Maghanap** nin profile nin sarong residente\n• **Maghimo** nin bagong pregnancy profile\n• **Hilingon gabos** na pregnancy profiles`,
+        searchLabel: '🔍 Maghanap nin Profile',
+        newLabel: '📝 Bagong Profile',
+        viewAllLabel: '📋 Hilingon Gabos',
+        residentMessage: `Matatabangan taka sa saimong **Pregnancy Profile**! 🤰\n\nSakop kan form na ini:\n• Kasaysayan nin Pagbados (Gravida, Para, etc.)\n• Physical Examination asin Vitals\n• Pediatric Assessment (0–24 asin 0–60 na bulan)\n• General Survey\n• NCD Risk Assessment\n• Lab Results\n\nGusto mo na bang magpoon?`,
+        fillOutLabel: '📝 Simbagon an Form',
+        viewMineLabel: '📋 Hilingon an Sakuyang Profiles',
+      },
+    };
+
+    const t = i18n[lang];
+
+    // Check if user is authenticated
+    if (!authService.isAuthenticated()) {
+      return {
+        message: t.loginRequired,
+        inlineUI: {
+          type: 'QUICK_REPLIES',
+          options: [
+            { id: '1', label: t.loginLabel, value: 'login' },
+            { id: '2', label: t.registerLabel, value: 'register' },
+          ],
+        },
+      };
+    }
+
+    const isStaff = authService.getCurrentUser()?.user_role === 'staff';
+
+    if (isStaff) {
+      return {
+        message: t.staffMessage,
+        inlineUI: {
+          type: 'QUICK_REPLIES',
+          options: [
+            { id: '1', label: t.searchLabel, value: 'view_pregnancy_profiles' },
+            { id: '2', label: t.newLabel, value: 'start_pregnancy_profile' },
+            { id: '3', label: t.viewAllLabel, value: 'view_pregnancy_profiles' },
+          ],
+        },
+        action: {
+          type: 'NAVIGATE',
+          data: {
+            screen: 'CityHealthSearch',
+            trigger: 'view_pregnancy_profiles',
+          },
+        },
+      };
+    }
+
     return {
-      message: `🚨 **This sounds like a medical emergency.**\n\nPlease take immediate action:`,
+      message: t.residentMessage,
+      inlineUI: {
+        type: 'QUICK_REPLIES',
+        options: [
+          { id: '1', label: t.fillOutLabel, value: 'start_pregnancy_profile' },
+          { id: '2', label: t.viewMineLabel, value: 'view_pregnancy_profiles' },
+        ],
+      },
+      action: {
+        type: 'NAVIGATE',
+        data: {
+          screen: 'PregnancyProfileForm',
+          trigger: 'start_pregnancy_profile',
+        },
+      },
+    };
+  }
+
+  private handleEmergency(message: string): AramonResponse {
+    const emergencyMsg = {
+      english: `🚨 **This sounds like a medical emergency.**\n\nPlease take immediate action:`,
+      tagalog: `🚨 **Mukhang ito ay isang medical emergency.**\n\nMangyaring kumilos agad:`,
+      bicolano: `🚨 **Garo ini sarong medical emergency.**\n\nPaki-aksyon tulos:`,
+    };
+    return {
+      message: emergencyMsg[this.currentLanguage],
       inlineUI: {
         type: 'EMERGENCY_CARD',
         data: {
@@ -1022,50 +1188,148 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
   // ============================================================================
 
   private handleYakapApply(message: string): AramonResponse {
+    const lang = this.currentLanguage;
+
+    const i18n = {
+      english: {
+        loginRequired: `To apply for Yakap (PhilHealth Konsulta), you'll need to log in first. This ensures your application is properly linked to your account! 🔐`,
+        loginLabel: '🔑 Login',
+        registerLabel: '📝 Register',
+        mainMessage: `Great! I can help you apply for **Yakap** (PhilHealth Konsulta Package). 🏥\n\nThis program provides you with:\n• Free primary care consultations\n• Basic laboratory tests\n• Essential medicines\n• Annual health assessments\n\nWould you like to start your application now?`,
+        startLabel: '📝 Start Application',
+        statusLabel: '📋 Check My Status',
+        learnLabel: '❓ Learn More',
+      },
+      tagalog: {
+        loginRequired: `Para mag-apply sa Yakap (PhilHealth Konsulta), kailangan mo munang mag-log in. Para ma-link nang maayos ang application mo sa iyong account! 🔐`,
+        loginLabel: '🔑 Mag-login',
+        registerLabel: '📝 Mag-register',
+        mainMessage: `Ayos! Matutulungan kita mag-apply sa **Yakap** (PhilHealth Konsulta Package). 🏥\n\nAng programa na ito ay nagbibigay ng:\n• Libreng primary care consultations\n• Basic na laboratory tests\n• Mahahalagang gamot\n• Taunang health assessments\n\nGusto mo na bang simulan ang application?`,
+        startLabel: '📝 Simulan ang Application',
+        statusLabel: '📋 Tingnan ang Status',
+        learnLabel: '❓ Alamin Pa',
+      },
+      bicolano: {
+        loginRequired: `Para mag-apply sa Yakap (PhilHealth Konsulta), kaipuhan mo munang mag-log in. Para ma-link nin tama an application mo sa saimong account! 🔐`,
+        loginLabel: '🔑 Mag-login',
+        registerLabel: '📝 Mag-register',
+        mainMessage: `Maray! Matatabangan taka mag-apply sa **Yakap** (PhilHealth Konsulta Package). 🏥\n\nAn programa na ini nagtatao nin:\n• Libreng primary care consultations\n• Basic na laboratory tests\n• Importanteng mga bulong\n• Taunang health assessments\n\nGusto mo na bang magpoon sa application?`,
+        startLabel: '📝 Magpoon nin Application',
+        statusLabel: '📋 Hilingon an Status',
+        learnLabel: '❓ Aramon Pa',
+      },
+    };
+
+    const t = i18n[lang];
+
     // Check if user is authenticated
     if (!authService.isAuthenticated()) {
       return {
-        message: `To apply for Yakap (PhilHealth Konsulta), you'll need to log in first. This ensures your application is properly linked to your account! 🔐`,
+        message: t.loginRequired,
         inlineUI: {
           type: 'QUICK_REPLIES',
           options: [
-            { id: '1', label: '🔑 Login', value: 'login' },
-            { id: '2', label: '📝 Register', value: 'register' },
+            { id: '1', label: t.loginLabel, value: 'login' },
+            { id: '2', label: t.registerLabel, value: 'register' },
           ],
         },
       };
     }
 
     return {
-      message: `Great! I can help you apply for **Yakap** (PhilHealth Konsulta Package). 🏥\n\nThis program provides you with:\n• Free primary care consultations\n• Basic laboratory tests\n• Essential medicines\n• Annual health assessments\n\nWould you like to start your application now?`,
+      message: t.mainMessage,
       inlineUI: {
         type: 'QUICK_REPLIES',
         options: [
-          { id: '1', label: '📝 Start Application', value: 'start_yakap' },
-          { id: '2', label: '📋 Check My Status', value: 'check_yakap_status' },
-          { id: '3', label: '❓ Learn More', value: 'yakap_info' },
+          { id: '1', label: t.startLabel, value: 'start_yakap' },
+          { id: '2', label: t.statusLabel, value: 'check_yakap_status' },
+          { id: '3', label: t.learnLabel, value: 'yakap_info' },
         ],
       },
       action: {
         type: 'NAVIGATE',
         data: {
           screen: 'YakapForm',
-          trigger: 'start_yakap', // This will trigger navigation when user clicks "Start Application"
+          trigger: 'start_yakap',
         },
       },
     };
   }
 
   private async handleYakapStatus(message: string): Promise<AramonResponse> {
+    const lang = this.currentLanguage;
+
+    const i18n = {
+      english: {
+        loginRequired: `To check your Yakap application status, please log in first! 🔐`,
+        loginLabel: '🔑 Login',
+        registerLabel: '📝 Register',
+        noProfile: `I couldn't find your profile. Please try logging in again.`,
+        statusHeader: `**Yakap Application Status**`,
+        statusLabel: 'Status',
+        appliedLabel: 'Applied',
+        membershipLabel: 'Membership',
+        remarksLabel: 'Remarks',
+        returnedMsg: `\nYour application has been returned for revision. Would you like to update it?`,
+        updateLabel: '📝 Update Application',
+        helpLabel: '❓ Need Help',
+        backLabel: '🏠 Back to Menu',
+        noAppMsg: `You don't have a Yakap application yet. Would you like to apply now? 📝\n\nYakap (PhilHealth Konsulta) provides free primary care consultations, basic lab tests, and essential medicines.`,
+        applyLabel: '📝 Apply Now',
+        learnLabel: '❓ Learn More',
+        errorMsg: `I had trouble checking your application status. Please try again later.`,
+      },
+      tagalog: {
+        loginRequired: `Para makita ang status ng Yakap application mo, mag-log in muna! 🔐`,
+        loginLabel: '🔑 Mag-login',
+        registerLabel: '📝 Mag-register',
+        noProfile: `Hindi ko mahanap ang profile mo. Subukan mong mag-log in ulit.`,
+        statusHeader: `**Status ng Yakap Application**`,
+        statusLabel: 'Status',
+        appliedLabel: 'Nag-apply',
+        membershipLabel: 'Uri ng Membership',
+        remarksLabel: 'Mga Paalala',
+        returnedMsg: `\nAng application mo ay ibinalik para sa rebisyon. Gusto mo bang i-update?`,
+        updateLabel: '📝 I-update ang Application',
+        helpLabel: '❓ Kailangan ng Tulong',
+        backLabel: '🏠 Bumalik sa Menu',
+        noAppMsg: `Wala ka pang Yakap application. Gusto mo bang mag-apply ngayon? 📝\n\nAng Yakap (PhilHealth Konsulta) ay nagbibigay ng libreng primary care consultations, basic na lab tests, at mahahalagang gamot.`,
+        applyLabel: '📝 Mag-apply Ngayon',
+        learnLabel: '❓ Alamin Pa',
+        errorMsg: `Nagkaproblema sa pag-check ng status ng application mo. Subukan ulit mamaya.`,
+      },
+      bicolano: {
+        loginRequired: `Para mahiling an status kan Yakap application mo, mag-log in muna! 🔐`,
+        loginLabel: '🔑 Mag-login',
+        registerLabel: '📝 Mag-register',
+        noProfile: `Dai ko makua an profile mo. Subukan mong mag-log in giraray.`,
+        statusHeader: `**Status kan Yakap Application**`,
+        statusLabel: 'Status',
+        appliedLabel: 'Nag-apply',
+        membershipLabel: 'Klase nin Membership',
+        remarksLabel: 'Mga Paisi',
+        returnedMsg: `\nAn application mo ibinalik para sa rebisyon. Gusto mo bang i-update?`,
+        updateLabel: '📝 I-update an Application',
+        helpLabel: '❓ Kaipuhan nin Tabang',
+        backLabel: '🏠 Bumalik sa Menu',
+        noAppMsg: `Wara ka pang Yakap application. Gusto mo bang mag-apply ngunyan? 📝\n\nAn Yakap (PhilHealth Konsulta) nagtatao nin libreng primary care consultations, basic na lab tests, asin importanteng mga bulong.`,
+        applyLabel: '📝 Mag-apply Ngunyan',
+        learnLabel: '❓ Aramon Pa',
+        errorMsg: `Nagkaproblema sa pag-check kan status kan application mo. Subukan giraray mamaya.`,
+      },
+    };
+
+    const t = i18n[lang];
+
     // Check if user is authenticated
     if (!authService.isAuthenticated()) {
       return {
-        message: `To check your Yakap application status, please log in first! 🔐`,
+        message: t.loginRequired,
         inlineUI: {
           type: 'QUICK_REPLIES',
           options: [
-            { id: '1', label: '🔑 Login', value: 'login' },
-            { id: '2', label: '📝 Register', value: 'register' },
+            { id: '1', label: t.loginLabel, value: 'login' },
+            { id: '2', label: t.registerLabel, value: 'register' },
           ],
         },
       };
@@ -1075,7 +1339,7 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     const resident = authService.getCurrentResident();
     if (!resident) {
       return {
-        message: `I couldn't find your profile. Please try logging in again.`,
+        message: t.noProfile,
       };
     }
 
@@ -1098,23 +1362,23 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
           rejected: 'Rejected',
         }[app.status] || app.status;
 
-        let statusMessage = `${statusEmoji} **Yakap Application Status**\n\n`;
-        statusMessage += `• **Status:** ${statusText}\n`;
-        statusMessage += `• **Applied:** ${new Date(app.applied_at).toLocaleDateString()}\n`;
-        statusMessage += `• **Membership:** ${app.membership_type}\n`;
+        let statusMessage = `${statusEmoji} ${t.statusHeader}\n\n`;
+        statusMessage += `• **${t.statusLabel}:** ${statusText}\n`;
+        statusMessage += `• **${t.appliedLabel}:** ${new Date(app.applied_at).toLocaleDateString()}\n`;
+        statusMessage += `• **${t.membershipLabel}:** ${app.membership_type}\n`;
         
         if (app.remarks) {
-          statusMessage += `• **Remarks:** ${app.remarks}\n`;
+          statusMessage += `• **${t.remarksLabel}:** ${app.remarks}\n`;
         }
 
         if (app.status === 'returned') {
           return {
-            message: statusMessage + `\nYour application has been returned for revision. Would you like to update it?`,
+            message: statusMessage + t.returnedMsg,
             inlineUI: {
               type: 'QUICK_REPLIES',
               options: [
-                { id: '1', label: '📝 Update Application', value: 'start_yakap' },
-                { id: '2', label: '❓ Need Help', value: 'Help with Yakap application' },
+                { id: '1', label: t.updateLabel, value: 'start_yakap' },
+                { id: '2', label: t.helpLabel, value: 'Help with Yakap application' },
               ],
             },
           };
@@ -1125,19 +1389,19 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
           inlineUI: {
             type: 'QUICK_REPLIES',
             options: [
-              { id: '1', label: '🏠 Back to Menu', value: 'What can you help me with?' },
+              { id: '1', label: t.backLabel, value: 'What can you help me with?' },
             ],
           },
         };
       } else {
         // No application found
         return {
-          message: `You don't have a Yakap application yet. Would you like to apply now? 📝\n\nYakap (PhilHealth Konsulta) provides free primary care consultations, basic lab tests, and essential medicines.`,
+          message: t.noAppMsg,
           inlineUI: {
             type: 'QUICK_REPLIES',
             options: [
-              { id: '1', label: '📝 Apply Now', value: 'start_yakap' },
-              { id: '2', label: '❓ Learn More', value: 'What is Yakap?' },
+              { id: '1', label: t.applyLabel, value: 'start_yakap' },
+              { id: '2', label: t.learnLabel, value: 'What is Yakap?' },
             ],
           },
         };
@@ -1145,7 +1409,7 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     } catch (error) {
       console.error('Error fetching Yakap status:', error);
       return {
-        message: `I had trouble checking your application status. Please try again later.`,
+        message: t.errorMsg,
       };
     }
   }
@@ -1156,12 +1420,22 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
   // ============================================================================
 
   private handleGetLocation(message: string): AramonResponse {
+    const locationMsg = {
+      english: '📍 Let me find your current location...',
+      tagalog: '📍 Hahanapin ko ang kasalukuyan mong lokasyon...',
+      bicolano: '📍 Hahanapon ko an presente mong lokasyon...',
+    };
+    const loadingMsg = {
+      english: '📍 Getting your location...',
+      tagalog: '📍 Kinukuha ang lokasyon mo...',
+      bicolano: '📍 Kinukua an lokasyon mo...',
+    };
     return {
-      message: message || '📍 Let me find your current location...',
+      message: message || locationMsg[this.currentLanguage],
       inlineUI: {
         type: 'QUICK_REPLIES',
         options: [
-          { id: 'loading', label: '📍 Getting your location...', value: 'loading' },
+          { id: 'loading', label: loadingMsg[this.currentLanguage], value: 'loading' },
         ],
       },
       action: {
@@ -1243,7 +1517,7 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       ? `Hello, ${userName}! 👋 I'm Aramon, your health assistant for Naga City.\n\n`
       : `Hello! 👋 I'm Aramon, your health assistant for Naga City.\n\n`;
     
-    message += `I can help you with:\n• 📅 Booking appointments\n• 🏥 Finding health facilities\n• 💊 Health questions & tips\n• 📝 Yakap (PhilHealth Konsulta) application\n• 🚨 Emergency guidance`;
+    message += `I can help you with:\n• 📅 Booking appointments\n• 🏥 Finding health facilities\n• 💊 Health questions & tips\n• 📝 Yakap (PhilHealth Konsulta) application\n• 🤰 Pregnancy Profiling\n• 🚨 Emergency guidance`;
 
     let inlineUI: InlineUIComponent | undefined;
 
@@ -1285,6 +1559,7 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
           { id: '1', label: '📅 Book Appointment', value: 'I want to book an appointment' },
           { id: '2', label: '🏥 Find Facilities', value: 'Find nearby health facilities' },
           { id: '3', label: '📝 Apply for Yakap', value: 'I want to apply for yakap' },
+          { id: '4', label: '🤰 Pregnancy Profile', value: 'pregnancy profile' },
         ],
       };
     }

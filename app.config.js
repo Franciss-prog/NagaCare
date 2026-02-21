@@ -1,0 +1,61 @@
+import 'dotenv/config';
+
+export default {
+  expo: {
+    name: 'Aramon AI',
+    slug: 'aramon-ai',
+    version: '1.0.0',
+
+    web: {
+      favicon: './assets/favicon.png',
+    },
+
+    experiments: {
+      tsconfigPaths: true,
+    },
+
+    plugins: [
+      [
+        'expo-location',
+        {
+          locationAlwaysAndWhenInUsePermission:
+            'NagaCare needs your location to find the nearest health facilities.',
+          locationWhenInUsePermission:
+            'NagaCare needs your location to find the nearest health facilities.',
+        },
+      ],
+    ],
+
+    orientation: 'portrait',
+    icon: './assets/icon.png',
+
+    userInterfaceStyle: 'light',
+
+    splash: {
+      image: './assets/splash.png',
+      resizeMode: 'contain',
+      backgroundColor: '#ffffff',
+    },
+    assetBundlePatterns: ['**/*'],
+    ios: {
+      supportsTablet: true,
+      infoPlist: {
+        NSLocationWhenInUseUsageDescription:
+          'NagaCare needs your location to find the nearest health facilities that match your needs.',
+      },
+    },
+    android: {
+      adaptiveIcon: {
+        foregroundImage: './assets/adaptive-icon.png',
+        backgroundColor: '#ffffff',
+      },
+      softwareKeyboardLayoutMode: 'resize',
+      permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'],
+    },
+    extra: {
+      supabaseUrl: process.env.SUPABASE_URL,
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+      groqApiKey: process.env.GROQ_API_KEY,
+    },
+  },
+};
