@@ -39,6 +39,7 @@ import {
   AppointmentList,
   QuickReplies,
   EmergencyCard,
+  QRCodeCard,
 } from '../components/chat';
 import { InlineUIComponent, ActionRequest, AppLanguage, LANGUAGE_OPTIONS } from '../types/aramon';
 
@@ -181,13 +182,17 @@ export default function HomeScreen() {
             if (updated[lastIndex]?.role === 'assistant') {
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                content: `😔 I couldn't find any health facility that provides **${serviceLabel}** services in the area.\n\nThis specific service may not be available at nearby facilities. Would you like to search for something else?`,
+                content: ({
+                  english: `😔 I couldn't find any health facility that provides **${serviceLabel}** services in the area.\n\nThis specific service may not be available at nearby facilities. Would you like to search for something else?`,
+                  tagalog: `😔 Hindi ko mahanap ang health facility na nagbibigay ng serbisyong **${serviceLabel}** sa lugar.\n\nMaaaring hindi available ang serbisyong ito sa mga pasilidad dito. Gusto mo bang maghanap ng iba?`,
+                  bicolano: `😔 Dai ko nahanap an health facility na nagtatao nin serbisyong **${serviceLabel}** sa lugar.\n\nMaaaring dai available an serbisyong ini sa mga pasilidad dito. Gusto mo bang maghanap nin iba?`,
+                })[currentLanguage],
                 inlineUI: {
                   type: 'QUICK_REPLIES',
                   options: [
-                    { id: '1', label: '🏥 View All Facilities', value: 'find facilities' },
-                    { id: '2', label: '📅 Book Different Service', value: 'book appointment' },
-                    { id: '3', label: '💬 Ask a Question', value: 'What services are available?' },
+                    { id: '1', label: ({ english: '🏥 View All Facilities', tagalog: '🏥 Tingnan ang Lahat ng Pasilidad', bicolano: '🏥 Hilingon an Gabos na Pasilidad' })[currentLanguage], value: 'find facilities' },
+                    { id: '2', label: ({ english: '📅 Book Different Service', tagalog: '📅 Mag-book ng Ibang Serbisyo', bicolano: '📅 Mag-book nin Ibang Serbisyo' })[currentLanguage], value: 'book appointment' },
+                    { id: '3', label: ({ english: '💬 Ask a Question', tagalog: '💬 Magtanong', bicolano: '💬 Magtanong' })[currentLanguage], value: 'What services are available?' },
                   ],
                 },
               };
@@ -205,7 +210,11 @@ export default function HomeScreen() {
             if (updated[lastIndex]?.role === 'assistant') {
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                content: `Here are health facilities that provide services${serviceNote}! 🏥\n\nOnly showing facilities that match your need:`,
+                content: ({
+                  english: `Here are health facilities that provide services${serviceNote}! 🏥\n\nOnly showing facilities that match your need:`,
+                  tagalog: `Narito ang mga health facility na nagbibigay ng serbisyo${serviceNote}! 🏥\n\nIpinakita lang ang mga pasilidad na tugma sa iyong pangangailangan:`,
+                  bicolano: `Ini an mga health facility na nagtatao nin serbisyo${serviceNote}! 🏥\n\nIpinakita sana an mga pasilidad na tugma sa saimong pangangailangan:`,
+                })[currentLanguage],
                 inlineUI: {
                   type: 'FACILITY_PICKER',
                   facilities: result.facilities,
@@ -222,7 +231,11 @@ export default function HomeScreen() {
             if (updated[lastIndex]?.role === 'assistant') {
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                content: "I couldn't find any available facilities at the moment. Please try again later or contact a health center directly.",
+                content: ({
+                  english: "I couldn't find any available facilities at the moment. Please try again later or contact a health center directly.",
+                  tagalog: "Hindi ko mahanap ang anumang available na pasilidad ngayon. Subukan muli mamaya o makipag-ugnayan direkta sa health center.",
+                  bicolano: "Dai ko nahanap an anumang available na pasilidad ngunyan. Subukan giraray mamaya o makipag-ugnayan direkta sa health center.",
+                })[currentLanguage],
                 inlineUI: undefined,
               };
             }
@@ -237,7 +250,11 @@ export default function HomeScreen() {
           if (updated[lastIndex]?.role === 'assistant') {
             updated[lastIndex] = {
               ...updated[lastIndex],
-              content: "I'm having trouble loading facilities. Please try again.",
+              content: ({
+                english: "I'm having trouble loading facilities. Please try again.",
+                tagalog: "Nagkaproblema sa pag-load ng mga pasilidad. Subukan ulit.",
+                bicolano: "Nagkaproblema sa pag-load kan mga pasilidad. Subukan giraray.",
+              })[currentLanguage],
               inlineUI: undefined,
             };
           }
@@ -263,12 +280,16 @@ export default function HomeScreen() {
             if (updated[lastIndex]?.role === 'assistant') {
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                content: `😔 I couldn't find any facility nearby that provides **${serviceLabel}** services.\n\nThis service may not be available at health facilities in the area. Would you like to try something else?`,
+                content: ({
+                  english: `😔 I couldn't find any facility nearby that provides **${serviceLabel}** services.\n\nThis service may not be available at health facilities in the area. Would you like to try something else?`,
+                  tagalog: `😔 Hindi ko mahanap ang anumang pasilidad malapit na nagbibigay ng serbisyong **${serviceLabel}**.\n\nMaaaring hindi available ang serbisyong ito sa mga health facility sa lugar. Gusto mo bang subukan ang iba?`,
+                  bicolano: `😔 Dai ko nahanap an anumang pasilidad malapit na nagtatao nin serbisyong **${serviceLabel}**.\n\nMaaaring dai available an serbisyong ini sa mga health facility sa lugar. Gusto mo bang subukan an iba?`,
+                })[currentLanguage],
                 inlineUI: {
                   type: 'QUICK_REPLIES',
                   options: [
-                    { id: '1', label: '🏥 View All Facilities', value: 'find facilities' },
-                    { id: '2', label: '📅 Book Appointment', value: 'book appointment' },
+                    { id: '1', label: ({ english: '🏥 View All Facilities', tagalog: '🏥 Tingnan ang Lahat ng Pasilidad', bicolano: '🏥 Hilingon an Gabos na Pasilidad' })[currentLanguage], value: 'find facilities' },
+                    { id: '2', label: ({ english: '📅 Book Appointment', tagalog: '📅 Mag-book ng Appointment', bicolano: '📅 Mag-book nin Appointment' })[currentLanguage], value: 'book appointment' },
                   ],
                 },
               };
@@ -280,14 +301,24 @@ export default function HomeScreen() {
           const serviceNote = result.isFiltered && result.classification && result.classification.serviceType !== 'general'
             ? ` that provide **${result.classification.label}** services`
             : '';
-          const distanceNote = userLocation ? ', sorted by distance from you 📍' : '';
+          const distanceNote = userLocation
+            ? ({
+                english: ', sorted by distance from you 📍',
+                tagalog: ', nakaayos ayon sa distansya mula sa iyo 📍',
+                bicolano: ', nakaayos base sa giralidad mula saimo 📍',
+              })[currentLanguage]
+            : '';
           setMessages((prev) => {
             const updated = [...prev];
             const lastIndex = updated.length - 1;
             if (updated[lastIndex]?.role === 'assistant') {
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                content: `Here are health facilities${serviceNote}${distanceNote}! 🏥`,
+                content: ({
+                  english: `Here are health facilities${serviceNote}${distanceNote}! 🏥`,
+                  tagalog: `Narito ang mga health facility${serviceNote}${distanceNote}! 🏥`,
+                  bicolano: `Ini an mga health facility${serviceNote}${distanceNote}! 🏥`,
+                })[currentLanguage],
                 inlineUI: {
                   type: 'FACILITY_PICKER',
                   facilities: result.facilities,
@@ -303,7 +334,11 @@ export default function HomeScreen() {
             if (updated[lastIndex]?.role === 'assistant') {
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                content: "I couldn't find any available facilities at the moment. Please try again later.",
+                content: ({
+                  english: "I couldn't find any available facilities at the moment. Please try again later.",
+                  tagalog: "Hindi ko mahanap ang anumang available na pasilidad ngayon. Subukan muli mamaya.",
+                  bicolano: "Dai ko nahanap an anumang available na pasilidad ngunyan. Subukan giraray mamaya.",
+                })[currentLanguage],
                 inlineUI: undefined,
               };
             }
@@ -318,7 +353,11 @@ export default function HomeScreen() {
           if (updated[lastIndex]?.role === 'assistant') {
             updated[lastIndex] = {
               ...updated[lastIndex],
-              content: "I'm having trouble loading facilities. Please try again.",
+              content: ({
+                english: "I'm having trouble loading facilities. Please try again.",
+                tagalog: "Nagkaproblema sa pag-load ng mga pasilidad. Subukan ulit.",
+                bicolano: "Nagkaproblema sa pag-load kan mga pasilidad. Subukan giraray.",
+              })[currentLanguage],
               inlineUI: undefined,
             };
           }
@@ -337,27 +376,45 @@ export default function HomeScreen() {
           const lastIndex = updated.length - 1;
           if (updated[lastIndex]?.role === 'assistant') {
             if (result) {
-              const areaNote = result.area ? ` in **${result.area}**` : '';
+              const areaNote = result.area
+                ? ({
+                    english: ` in **${result.area}**`,
+                    tagalog: ` sa **${result.area}**`,
+                    bicolano: ` sa **${result.area}**`,
+                  })[currentLanguage]
+                : '';
+              const coordLabel = { english: 'Coordinates', tagalog: 'Koordinado', bicolano: 'Koordinado' }[currentLanguage];
+              const accuracyLabel = { english: 'Accuracy', tagalog: 'Katumpakan', bicolano: 'Katumpakan' }[currentLanguage];
+              const foundMsg = {
+                english: `📍 Found your location${areaNote}!\n\n**Address:** ${result.address}\n\n**${coordLabel}:** ${result.location.latitude.toFixed(5)}, ${result.location.longitude.toFixed(5)}${result.location.accuracy ? `\n**${accuracyLabel}:** ~${Math.round(result.location.accuracy)}m` : ''}`,
+                tagalog: `📍 Nahanap ang iyong lokasyon${areaNote}!\n\n**Address:** ${result.address}\n\n**${coordLabel}:** ${result.location.latitude.toFixed(5)}, ${result.location.longitude.toFixed(5)}${result.location.accuracy ? `\n**${accuracyLabel}:** ~${Math.round(result.location.accuracy)}m` : ''}`,
+                bicolano: `📍 Nahanap an saimong lokasyon${areaNote}!\n\n**Address:** ${result.address}\n\n**${coordLabel}:** ${result.location.latitude.toFixed(5)}, ${result.location.longitude.toFixed(5)}${result.location.accuracy ? `\n**${accuracyLabel}:** ~${Math.round(result.location.accuracy)}m` : ''}`,
+              };
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                content: `📍 Found your location${areaNote}!\n\n**Address:** ${result.address}\n\n**Coordinates:** ${result.location.latitude.toFixed(5)}, ${result.location.longitude.toFixed(5)}${result.location.accuracy ? `\n**Accuracy:** ~${Math.round(result.location.accuracy)}m` : ''}`,
+                content: foundMsg[currentLanguage],
                 inlineUI: {
                   type: 'QUICK_REPLIES',
                   options: [
-                    { id: '1', label: '🏥 Find Nearby Facilities', value: 'find facilities near me' },
-                    { id: '2', label: '📅 Book Appointment', value: 'book appointment' },
+                    { id: '1', label: ({ english: '🏥 Find Nearby Facilities', tagalog: '🏥 Maghanap ng Malapit na Pasilidad', bicolano: '🏥 Maghanap nin Malapit na Pasilidad' })[currentLanguage], value: 'find facilities near me' },
+                    { id: '2', label: ({ english: '📅 Book Appointment', tagalog: '📅 Mag-book ng Appointment', bicolano: '📅 Mag-book nin Appointment' })[currentLanguage], value: 'book appointment' },
                   ],
                 },
               };
             } else {
+              const notFoundMsg = {
+                english: `😔 I couldn't get your location. This can happen if:\n\n• Location permission was denied\n• GPS/Location services are turned off\n\nPlease enable location access in your device settings and try again!`,
+                tagalog: `😔 Hindi ko makuha ang iyong lokasyon. Maaaring mangyari ito kung:\n\n• Tinanggihan ang location permission\n• Naka-off ang GPS/Location services\n\nMangyaring i-enable ang location access sa mga settings ng iyong device at subukan muli!`,
+                bicolano: `😔 Dai ko makua an saimong lokasyon. Maaaring mangyari ini kun:\n\n• Tinanggihan an location permission\n• Naka-off an GPS/Location services\n\nPaki-enable an location access sa mga settings kan saimong device asin subukan giraray!`,
+              };
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                content: `😔 I couldn't get your location. This can happen if:\n\n• Location permission was denied\n• GPS/Location services are turned off\n\nPlease enable location access in your device settings and try again!`,
+                content: notFoundMsg[currentLanguage],
                 inlineUI: {
                   type: 'QUICK_REPLIES',
                   options: [
-                    { id: '1', label: '🔄 Try Again', value: 'where am I?' },
-                    { id: '2', label: '🏥 Find Facilities', value: 'find facilities' },
+                    { id: '1', label: ({ english: '🔄 Try Again', tagalog: '🔄 Subukan Ulit', bicolano: '🔄 Subukan Giraray' })[currentLanguage], value: 'where am I?' },
+                    { id: '2', label: ({ english: '🏥 Find Facilities', tagalog: '🏥 Maghanap ng Pasilidad', bicolano: '🏥 Maghanap nin Pasilidad' })[currentLanguage], value: 'find facilities' },
                   ],
                 },
               };
@@ -373,7 +430,11 @@ export default function HomeScreen() {
           if (updated[lastIndex]?.role === 'assistant') {
             updated[lastIndex] = {
               ...updated[lastIndex],
-              content: "I had trouble getting your location. Please make sure location services are enabled and try again.",
+              content: ({
+                english: "I had trouble getting your location. Please make sure location services are enabled and try again.",
+                tagalog: "Nagkaproblema sa pagkuha ng iyong lokasyon. Siguraduhing naka-on ang location services at subukan muli.",
+                bicolano: "Nagkaproblema sa pagkua kan saimong lokasyon. Siguraduhing naka-on an location services asin subukan giraray.",
+              })[currentLanguage],
               inlineUI: undefined,
             };
           }
@@ -394,7 +455,7 @@ export default function HomeScreen() {
       {
         id: Date.now().toString(),
         role: 'user',
-        content: `I'll go with ${facility.name}`,
+        content: ({ english: `I'll go with ${facility.name}`, tagalog: `Pipiliin ko ang ${facility.name}`, bicolano: `Pipilion ko an ${facility.name}` })[currentLanguage],
         timestamp: new Date(),
       },
     ]);
@@ -417,7 +478,7 @@ export default function HomeScreen() {
       {
         id: Date.now().toString(),
         role: 'user',
-        content: `${formattedDate} works for me`,
+        content: ({ english: `${formattedDate} works for me`, tagalog: `Okay ang ${formattedDate} para sa akin`, bicolano: `Okay an ${formattedDate} para sa sakuya` })[currentLanguage],
         timestamp: new Date(),
       },
     ]);
@@ -433,7 +494,7 @@ export default function HomeScreen() {
       {
         id: Date.now().toString(),
         role: 'user',
-        content: `${time} please`,
+        content: ({ english: `${time} please`, tagalog: `${time} po`, bicolano: `${time} po` })[currentLanguage],
         timestamp: new Date(),
       },
     ]);
@@ -448,7 +509,7 @@ export default function HomeScreen() {
       {
         id: Date.now().toString(),
         role: 'user',
-        content: 'Yes, confirm my booking',
+        content: ({ english: 'Yes, confirm my booking', tagalog: 'Oo, ikumpirma ang aking booking', bicolano: 'Oo, ikumpirma an sakuyang booking' })[currentLanguage],
         timestamp: new Date(),
       },
     ]);
@@ -465,7 +526,7 @@ export default function HomeScreen() {
       {
         id: Date.now().toString(),
         role: 'user',
-        content: 'Cancel booking',
+        content: ({ english: 'Cancel booking', tagalog: 'Kanselahin ang booking', bicolano: 'Kanselaron an booking' })[currentLanguage],
         timestamp: new Date(),
       },
     ]);
@@ -484,7 +545,7 @@ export default function HomeScreen() {
       {
         id: Date.now().toString(),
         role: 'user',
-        content: 'Cancel this appointment',
+        content: ({ english: 'Cancel this appointment', tagalog: 'Kanselahin ang appointment na ito', bicolano: 'Kanselaron an appointment na ini' })[currentLanguage],
         timestamp: new Date(),
       },
     ]);
@@ -501,7 +562,11 @@ export default function HomeScreen() {
     const greetingMessage: ChatMessage = {
       id: 'greeting-' + Date.now(),
       role: 'assistant',
-      content: "Chat cleared! I'm Aramon, ready to help you again.\n\nWhat would you like to do?",
+      content: ({
+        english: `Chat cleared! I'm Aramon, ready to help you again.\n\nWhat would you like to do?`,
+        tagalog: `Nalinis na ang chat! Ako si Aramon, handa na ulit para tumulong.\n\nAno ang gusto mong gawin?`,
+        bicolano: `Nalinis na an chat! Ako si Aramon, prontong giraray para tumulong.\n\nAno an gusto mong gibuhon?`,
+      })[currentLanguage],
       timestamp: new Date(),
       inlineUI: greeting.inlineUI,
     };
@@ -524,6 +589,7 @@ export default function HomeScreen() {
           <FacilityPicker
             facilities={inlineUI.facilities}
             onSelect={handleFacilitySelect}
+            language={currentLanguage}
           />
         );
 
@@ -577,6 +643,9 @@ export default function HomeScreen() {
 
       case 'EMERGENCY_CARD':
         return <EmergencyCard data={inlineUI.data} />;
+
+      case 'QR_CODE_CARD':
+        return <QRCodeCard residentData={inlineUI.residentData} />;
 
       default:
         return null;
@@ -726,7 +795,7 @@ export default function HomeScreen() {
               <View className="flex-row items-center">
                 <ActivityIndicator color="#f97316" size="small" />
                 <Text className="text-slate-400 ml-3 text-sm">
-                  Thinking...
+                  {{ english: 'Thinking...', tagalog: 'Nag-iisip...', bicolano: 'Naghuhurop...' }[currentLanguage]}
                 </Text>
               </View>
             </View>

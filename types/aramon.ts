@@ -65,7 +65,8 @@ export type ActionRequest =
   | { type: 'SHOW_DIRECTIONS'; data: { facilityId: string } }
   | { type: 'NAVIGATE'; data: NavigateData }
   | { type: 'CHECK_YAKAP_STATUS'; data: Record<string, unknown> }
-  | { type: 'GET_LOCATION'; data: Record<string, unknown> };
+  | { type: 'GET_LOCATION'; data: Record<string, unknown> }
+  | { type: 'SHOW_QR_CODE'; data: Record<string, unknown> };
 
 export interface BookAppointmentData {
   facilityId?: string;
@@ -113,6 +114,17 @@ export interface NavigateData {
 // UI elements that appear within the chat
 // ============================================================================
 
+export interface QRResidentPayload {
+  residentId: string;
+  name: string;
+  barangay: string;
+  purok: string;
+  sex?: string | null;
+  birthDate?: string | null;
+  contactNumber?: string | null;
+  philhealthNo?: string | null;
+}
+
 export type InlineUIComponent =
   | { type: 'FACILITY_PICKER'; facilities: HealthFacility[] }
   | { type: 'DATE_PICKER'; availableDates: DateOption[] }
@@ -122,7 +134,8 @@ export type InlineUIComponent =
   | { type: 'APPOINTMENT_CARD'; appointment: Appointment }
   | { type: 'FACILITY_CARD'; facility: HealthFacility }
   | { type: 'QUICK_REPLIES'; options: QuickReply[] }
-  | { type: 'EMERGENCY_CARD'; data: EmergencyData };
+  | { type: 'EMERGENCY_CARD'; data: EmergencyData }
+  | { type: 'QR_CODE_CARD'; residentData: QRResidentPayload };
 
 export interface DateOption {
   date: string; // ISO format: YYYY-MM-DD
