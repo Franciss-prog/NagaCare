@@ -153,9 +153,7 @@ You complement health workers but do NOT replace medical professionals. For emer
 
 Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
 
-// ============================================================================
-// LANGUAGE PROMPT INSTRUCTIONS
-// ============================================================================
+
 
 const LANGUAGE_PROMPTS: Record<AppLanguage, string> = {
   english: '',
@@ -405,9 +403,7 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     }
   }
 
-  // ============================================================================
-  // PARSE AI RESPONSE - Extract intent and create inline UI
-  // ============================================================================
+  
 
   private async parseAIResponse(rawResponse: string): Promise<AramonResponse> {
     // Try to extract JSON block from response
