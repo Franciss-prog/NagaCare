@@ -71,6 +71,7 @@ INTENT TYPES:
 - YAKAP_STATUS: User wants to check their Yakap application status
 - GET_LOCATION: User wants to know where they are, their current location, or asks anything about their position/address. You HAVE access to their device GPS — never say you cannot find their location.
 - PREGNANCY_PROFILE: User wants to fill out, open, view, or update their pregnancy profile/prenatal form. This covers pregnancy profiling, prenatal records, maternal health forms, and pregnancy history.
+- SHOW_QR_CODE: User wants to see, display, or share their personal health QR code or Health ID.
 
 BOOKING FLOW:
 When booking, extract any information the user provides:
@@ -143,14 +144,16 @@ YAKAP KEYWORDS (trigger Yakap application flow):
 PREGNANCY PROFILE KEYWORDS (trigger pregnancy profiling form):
 - pregnancy profile, pregnancy profiling, prenatal profile, prenatal form, maternal profile, pregnancy form, pregnancy record, fill out pregnancy, pregnancy history form, prenatal record
 
+QR CODE KEYWORDS (trigger QR code display):
+- my qr code, show my qr code, qr code, health qr, show qr, health id, my health id, scan me, resident qr, nagacare qr code, show me my qr code
+- SHOW_QR_CODE: User wants to see or share their health QR code
+
 HEALTH DISCLAIMER:
 You complement health workers but do NOT replace medical professionals. For emergencies, always direct to 911.
 
 Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
 
-// ============================================================================
-// LANGUAGE PROMPT INSTRUCTIONS
-// ============================================================================
+
 
 const LANGUAGE_PROMPTS: Record<AppLanguage, string> = {
   english: '',
@@ -305,6 +308,11 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       return this.handlePregnancyProfile(userMessage);
     }
 
+    // Handle QR Code quick replies
+    if (lowerMessage === 'show_qr_code' || lowerMessage === 'my qr code') {
+      return this.handleShowQRCode(userMessage);
+    }
+
     if (lowerMessage === 'view_pregnancy_profiles' || lowerMessage === 'my pregnancy profiles') {
       const msg = {
         english: 'Opening your pregnancy profiles! 🤰',
@@ -346,6 +354,11 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       // Check for Pregnancy Profile keywords before going to AI
       if (this.isPregnancyProfileRelated(userMessage)) {
         return this.handlePregnancyProfile(userMessage);
+      }
+
+      // Check for QR Code keywords before going to AI
+      if (this.isQRCodeRelated(userMessage)) {
+        return this.handleShowQRCode(userMessage);
       }
 
       // Check if this is a response to an ongoing flow
@@ -390,9 +403,7 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     }
   }
 
-  // ============================================================================
-  // PARSE AI RESPONSE - Extract intent and create inline UI
-  // ============================================================================
+  
 
   private async parseAIResponse(rawResponse: string): Promise<AramonResponse> {
     // Try to extract JSON block from response
@@ -433,6 +444,9 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
 
           case 'PREGNANCY_PROFILE':
             return this.handlePregnancyProfile(message);
+
+          case 'SHOW_QR_CODE':
+            return this.handleShowQRCode(message);
         }
       } catch (e) {
         console.error('Failed to parse AI intent JSON:', e);
@@ -476,13 +490,20 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
 
     // Check if user is authenticated
     if (!authService.isAuthenticated()) {
+      const loginMsg = {
+        english: `To book an appointment, please log in first. You can create an account if you don't have one yet! 🔐`,
+        tagalog: `Para mag-book ng appointment, kailangan mo munang mag-log in. Maaari kang gumawa ng account kung wala ka pa! 🔐`,
+        bicolano: `Para mag-book nin appointment, kaipuhan mo munang mag-log in. Pwede kang maghimo nin account kun wara ka pa! 🔐`,
+      };
+      const loginLabel = { english: '🔑 Login', tagalog: '🔑 Mag-login', bicolano: '🔑 Mag-login' };
+      const registerLabel = { english: '📝 Register', tagalog: '📝 Mag-register', bicolano: '📝 Mag-register' };
       return {
-        message: `To book an appointment, please log in first. You can create an account if you don't have one yet! 🔐`,
+        message: loginMsg[this.currentLanguage],
         inlineUI: {
           type: 'QUICK_REPLIES',
           options: [
-            { id: '1', label: '🔑 Login', value: 'login' },
-            { id: '2', label: '📝 Register', value: 'register' },
+            { id: '1', label: loginLabel[this.currentLanguage], value: 'login' },
+            { id: '2', label: registerLabel[this.currentLanguage], value: 'register' },
           ],
         },
       };
@@ -508,14 +529,23 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       ? ` for **${classification.label}**`
       : '';
 
+    const defaultMsg = {
+      english: `I'd be happy to help you book an appointment${serviceLabel}! Let me find facilities that offer this service...`,
+      tagalog: `Masaya akong makakatulong sa pag-book ng appointment${serviceLabel}! Hahanapin ko ang mga pasilidad na nag-aalok ng serbisyong ito...`,
+      bicolano: `Maugma akong makakatabang sa pag-book nin appointment${serviceLabel}! Hahanapon ko an mga pasilidad na nag-aalok kaining serbisyo...`,
+    };
+    const loadingLabel = {
+      english: '⏳ Finding matching facilities...',
+      tagalog: '⏳ Hinahanap ang mga pasilidad...',
+      bicolano: '⏳ Hinahanapon an mga pasilidad...',
+    };
+
     return {
-      message:
-        message ||
-        `I'd be happy to help you book an appointment${serviceLabel}! Let me find facilities that offer this service...`,
+      message: message || defaultMsg[this.currentLanguage],
       inlineUI: {
         type: 'QUICK_REPLIES',
         options: [
-          { id: 'loading', label: '⏳ Finding matching facilities...', value: 'loading' },
+          { id: 'loading', label: loadingLabel[this.currentLanguage], value: 'loading' },
         ],
       },
       action: {
@@ -558,16 +588,22 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     // Get next 30 days for date selection (no longer fetching from DB)
     const dates = appointmentServiceDB.getAvailableDates(30);
 
+    const facilityMsg = {
+      english: `Great choice! **${facility.name}** 🏥\n\nWhen would you like to request your appointment?`,
+      tagalog: `Magandang pagpili! **${facility.name}** 🏥\n\nKailan mo gustong hilingin ang appointment?`,
+      bicolano: `Maray na pagpili! **${facility.name}** 🏥\n\nKadiin mo gustong ihiling an appointment?`,
+    };
+
     // Add to conversation
     this.conversationHistory.push({
       id: Date.now().toString(),
       role: 'assistant',
-      content: `Great choice! ${facility.name}. When would you like to request your appointment?`,
+      content: facilityMsg[this.currentLanguage],
       timestamp: new Date(),
     });
 
     return {
-      message: `Great choice! **${facility.name}** 🏥\n\nWhen would you like to request your appointment?`,
+      message: facilityMsg[this.currentLanguage],
       inlineUI: {
         type: 'DATE_PICKER',
         availableDates: dates,
@@ -604,15 +640,21 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       day: 'numeric',
     });
 
+    const timeMsg = {
+      english: `What time would you prefer for **${formattedDate}**?`,
+      tagalog: `Anong oras ang gusto mo para sa **${formattedDate}**?`,
+      bicolano: `Anong oras an gusto mo para sa **${formattedDate}**?`,
+    };
+
     this.conversationHistory.push({
       id: Date.now().toString(),
       role: 'assistant',
-      content: `What time would you prefer for ${formattedDate}?`,
+      content: timeMsg[this.currentLanguage],
       timestamp: new Date(),
     });
 
     return {
-      message: `What time would you prefer for **${formattedDate}**?`,
+      message: timeMsg[this.currentLanguage],
       inlineUI: {
         type: 'TIME_SLOT_PICKER',
         slots: timeSlots,
@@ -636,7 +678,12 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     const facility = state.selectedFacility;
 
     if (!facility) {
-      return { message: 'Something went wrong. Please start over.' };
+      const errMsg = {
+        english: 'Something went wrong. Please start over.',
+        tagalog: 'May nangyaring mali. Mangyaring magsimula muli.',
+        bicolano: 'Igwa nin problema. Paki-simula giraray.',
+      };
+      return { message: errMsg[this.currentLanguage] };
     }
 
     const appointmentSummary: AppointmentSummary = {
@@ -658,15 +705,21 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       },
     });
 
+    const confirmMsg = {
+      english: `Perfect! Here's your appointment request:`,
+      tagalog: `Perpekto! Narito ang iyong kahilingan sa appointment:`,
+      bicolano: `Perpekto! Ini an saimong kahilingan sa appointment:`,
+    };
+
     this.conversationHistory.push({
       id: Date.now().toString(),
       role: 'assistant',
-      content: `Perfect! Here's your appointment request summary. Please confirm:`,
+      content: confirmMsg[this.currentLanguage],
       timestamp: new Date(),
     });
 
     return {
-      message: `Perfect! Here's your appointment request:`,
+      message: confirmMsg[this.currentLanguage],
       inlineUI: {
         type: 'CONFIRMATION_CARD',
         appointment: appointmentSummary,
@@ -688,7 +741,12 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     const summary = state.pendingConfirmation;
 
     if (!summary) {
-      return { message: 'No pending appointment to confirm. Please start over.' };
+      const noPendingMsg = {
+        english: 'No pending appointment to confirm. Please start over.',
+        tagalog: 'Walang nakabinbing appointment na kumpirmahin. Mangyaring magsimula muli.',
+        bicolano: 'Wara nin nakabantay na appointment na ikumpirma. Paki-simula giraray.',
+      };
+      return { message: noPendingMsg[this.currentLanguage] };
     }
 
     // Submit the appointment request (status will be 'pending')
@@ -700,14 +758,22 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       undefined // notes
     );
 
+    const tryAgainLabel = { english: '🔄 Try Again', tagalog: '🔄 Subukan Ulit', bicolano: '🔄 Subukan Giraray' };
+    const cancelLabel = { english: '❌ Cancel', tagalog: '❌ Kanselahin', bicolano: '❌ Kanselaron' };
+
     if (!result.success) {
+      const failMsg = {
+        english: `❌ ${result.error || 'Failed to submit appointment request'}. Please try again.`,
+        tagalog: `❌ ${result.error || 'Hindi makapag-submit ng appointment request'}. Subukan ulit.`,
+        bicolano: `❌ ${result.error || 'Dai nakapag-submit nin appointment request'}. Subukan giraray.`,
+      };
       return {
-        message: `❌ ${result.error || 'Failed to submit appointment request'}. Please try again.`,
+        message: failMsg[this.currentLanguage],
         inlineUI: {
           type: 'QUICK_REPLIES',
           options: [
-            { id: '1', label: '🔄 Try Again', value: 'book appointment' },
-            { id: '2', label: '❌ Cancel', value: 'cancel' },
+            { id: '1', label: tryAgainLabel[this.currentLanguage], value: 'book appointment' },
+            { id: '2', label: cancelLabel[this.currentLanguage], value: 'cancel' },
           ],
         },
       };
@@ -718,21 +784,30 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
 
     const formattedDate = this.formatAppointmentDate(summary.date);
 
+    const submittedMsg = {
+      english: `⏳ **Your appointment request has been submitted!**\n\n📍 ${summary.facilityName}\n📅 ${formattedDate}\n⏰ ${summary.time}\n\n**Status:** Pending Approval\n\nThe health facility will review your request and confirm the appointment. You'll be notified once it's approved.\n\nIs there anything else I can help you with?`,
+      tagalog: `⏳ **Naisumite na ang iyong appointment request!**\n\n📍 ${summary.facilityName}\n📅 ${formattedDate}\n⏰ ${summary.time}\n\n**Status:** Naghihintay ng Pagpapatibay\n\nSusuriin ng health facility ang iyong kahilingan at ikukumpirma ang appointment. Aabisuhan ka kapag naaprubahan na.\n\nMay mayroon pa ba akong matutulungan sa iyo?`,
+      bicolano: `⏳ **Naisumite na an saimong appointment request!**\n\n📍 ${summary.facilityName}\n📅 ${formattedDate}\n⏰ ${summary.time}\n\n**Status:** Naghihintay nin Pag-apruba\n\nSusurihon kan health facility an saimong kahilingan asin ikukumpirma an appointment. Aabisuhan ka pag naaprubahan na.\n\nIgwa pa bang matabangan taka?`,
+    };
+    const viewApptLabel = { english: '📅 View My Appointments', tagalog: '📅 Tingnan ang Aking Mga Appointment', bicolano: '📅 Hilingon an Sakuyang mga Appointment' };
+    const findFacLabel = { english: '🏥 Find Facilities', tagalog: '🏥 Maghanap ng Pasilidad', bicolano: '🏥 Maghanap nin Pasilidad' };
+    const healthTipsLabel = { english: '💊 Health Tips', tagalog: '💊 Mga Tip sa Kalusugan', bicolano: '💊 Mga Tip sa Kalusugan' };
+
     this.conversationHistory.push({
       id: Date.now().toString(),
       role: 'assistant',
-      content: `Your appointment request has been submitted!`,
+      content: submittedMsg[this.currentLanguage],
       timestamp: new Date(),
     });
 
     return {
-      message: `⏳ **Your appointment request has been submitted!**\n\n📍 ${summary.facilityName}\n📅 ${formattedDate}\n⏰ ${summary.time}\n\n**Status:** Pending Approval\n\nThe health facility will review your request and confirm the appointment. You'll be notified once it's approved.\n\nIs there anything else I can help you with?`,
+      message: submittedMsg[this.currentLanguage],
       inlineUI: {
         type: 'QUICK_REPLIES',
         options: [
-          { id: '1', label: '📅 View My Appointments', value: 'show appointments' },
-          { id: '2', label: '🏥 Find Facilities', value: 'find facilities' },
-          { id: '3', label: '💊 Health Tips', value: 'health tips' },
+          { id: '1', label: viewApptLabel[this.currentLanguage], value: 'show appointments' },
+          { id: '2', label: findFacLabel[this.currentLanguage], value: 'find facilities' },
+          { id: '3', label: healthTipsLabel[this.currentLanguage], value: 'health tips' },
         ],
       },
     };
@@ -763,22 +838,30 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
   cancelBookingFlow(): AramonResponse {
     this.stateManager.reset();
 
+    const cancelMsg = {
+      english: 'No problem, booking cancelled. Is there anything else I can help you with?',
+      tagalog: 'Sige, nakansela ang booking. Mayroon pa bang mayroon akong matutulungan sa iyo?',
+      bicolano: 'Sige, nakansela an booking. Igwa pa bang matabangan taka?',
+    };
+    const bookLabel = { english: '📅 Book Appointment', tagalog: '📅 Mag-book ng Appointment', bicolano: '📅 Mag-book nin Appointment' };
+    const findLabel = { english: '🏥 Find Facilities', tagalog: '🏥 Maghanap ng Pasilidad', bicolano: '🏥 Maghanap nin Pasilidad' };
+    const tipsLabel = { english: '💊 Health Tips', tagalog: '💊 Mga Tip sa Kalusugan', bicolano: '💊 Mga Tip sa Kalusugan' };
+
     this.conversationHistory.push({
       id: Date.now().toString(),
       role: 'assistant',
-      content: 'No problem! Let me know if you need anything else.',
+      content: cancelMsg[this.currentLanguage],
       timestamp: new Date(),
     });
 
     return {
-      message:
-        'No problem, booking cancelled. Is there anything else I can help you with?',
+      message: cancelMsg[this.currentLanguage],
       inlineUI: {
         type: 'QUICK_REPLIES',
         options: [
-          { id: '1', label: '📅 Book Appointment', value: 'book appointment' },
-          { id: '2', label: '🏥 Find Facilities', value: 'find facilities' },
-          { id: '3', label: '💊 Health Tips', value: 'health tips' },
+          { id: '1', label: bookLabel[this.currentLanguage], value: 'book appointment' },
+          { id: '2', label: findLabel[this.currentLanguage], value: 'find facilities' },
+          { id: '3', label: tipsLabel[this.currentLanguage], value: 'health tips' },
         ],
       },
     };
@@ -796,13 +879,24 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     const service = data.service as string | undefined;
     const searchTerm = query || service || '';
 
+    const findFacMsg = {
+      english: '📍 Let me find health facilities near you...',
+      tagalog: '📍 Hahanapin ko ang mga health facility malapit sa iyo...',
+      bicolano: '📍 Hahanapon ko an mga health facility malapit saimo...',
+    };
+    const findFacLoading = {
+      english: '⏳ Finding nearby facilities...',
+      tagalog: '⏳ Hinahanap ang mga malapit na pasilidad...',
+      bicolano: '⏳ Hinahanapon an mga malapit na pasilidad...',
+    };
+
     // Return an action so HomeScreen can fetch GPS first, then search
     return {
-      message: message || '📍 Let me find health facilities near you...',
+      message: message || findFacMsg[this.currentLanguage],
       inlineUI: {
         type: 'QUICK_REPLIES',
         options: [
-          { id: 'loading', label: '⏳ Finding nearby facilities...', value: 'loading' },
+          { id: 'loading', label: findFacLoading[this.currentLanguage], value: 'loading' },
         ],
       },
       action: {
@@ -843,14 +937,22 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
   }
 
   private async handleShowAppointments(message: string): Promise<AramonResponse> {
+    const loginMsg = {
+      english: `Please log in to view your appointments. 🔐`,
+      tagalog: `Mag-log in muna para makita ang iyong mga appointment. 🔐`,
+      bicolano: `Mag-log in muna para mahiling an saimong mga appointment. 🔐`,
+    };
+    const loginLabel = { english: '🔑 Login', tagalog: '🔑 Mag-login', bicolano: '🔑 Mag-login' };
+    const registerLabel = { english: '📝 Register', tagalog: '📝 Mag-register', bicolano: '📝 Mag-register' };
+
     if (!authService.isAuthenticated()) {
       return {
-        message: `Please log in to view your appointments. 🔐`,
+        message: loginMsg[this.currentLanguage],
         inlineUI: {
           type: 'QUICK_REPLIES',
           options: [
-            { id: '1', label: '🔑 Login', value: 'login' },
-            { id: '2', label: '📝 Register', value: 'register' },
+            { id: '1', label: loginLabel[this.currentLanguage], value: 'login' },
+            { id: '2', label: registerLabel[this.currentLanguage], value: 'register' },
           ],
         },
       };
@@ -858,15 +960,22 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
 
     const dbAppointments = await appointmentServiceDB.getUpcomingAppointments();
 
+    const noApptMsg = {
+      english: `You don't have any upcoming appointments. Would you like to request one?`,
+      tagalog: `Wala kang mga darating na appointment. Gusto mo bang humiling ng isa?`,
+      bicolano: `Wara kang mga parating na appointment. Gusto mo bang maghiling nin saro?`,
+    };
+    const bookLabel = { english: '📅 Book Appointment', tagalog: '📅 Mag-book ng Appointment', bicolano: '📅 Mag-book nin Appointment' };
+    const findLabel = { english: '🏥 Find Facilities', tagalog: '🏥 Maghanap ng Pasilidad', bicolano: '🏥 Maghanap nin Pasilidad' };
+
     if (dbAppointments.length === 0) {
       return {
-        message:
-          "You don't have any upcoming appointments. Would you like to request one?",
+        message: noApptMsg[this.currentLanguage],
         inlineUI: {
           type: 'QUICK_REPLIES',
           options: [
-            { id: '1', label: '📅 Book Appointment', value: 'book appointment' },
-            { id: '2', label: '🏥 Find Facilities', value: 'find facilities' },
+            { id: '1', label: bookLabel[this.currentLanguage], value: 'book appointment' },
+            { id: '2', label: findLabel[this.currentLanguage], value: 'find facilities' },
           ],
         },
       };
@@ -889,13 +998,35 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     const bookedCount = appointments.filter(a => a.status === 'booked').length;
     const completedCount = appointments.filter(a => a.status === 'completed').length;
 
-    let statusMessage = `Here are your appointments:`;
+    const apptListMsg = {
+      english: {
+        all: `Here are your appointments:`,
+        both: `Here are your appointments (${bookedCount} upcoming, ${completedCount} completed):`,
+        upcoming: `Here are your upcoming appointments:`,
+        completed: `Here are your completed appointments:`,
+      },
+      tagalog: {
+        all: `Narito ang iyong mga appointment:`,
+        both: `Narito ang iyong mga appointment (${bookedCount} darating, ${completedCount} natapos):`,
+        upcoming: `Narito ang iyong mga darating na appointment:`,
+        completed: `Narito ang iyong mga natapos na appointment:`,
+      },
+      bicolano: {
+        all: `Ini an saimong mga appointment:`,
+        both: `Ini an saimong mga appointment (${bookedCount} parating, ${completedCount} natapos):`,
+        upcoming: `Ini an saimong mga parating na appointment:`,
+        completed: `Ini an saimong mga natapos na appointment:`,
+      },
+    };
+
+    const msgs = apptListMsg[this.currentLanguage];
+    let statusMessage = msgs.all;
     if (bookedCount > 0 && completedCount > 0) {
-      statusMessage = `Here are your appointments (${bookedCount} upcoming, ${completedCount} completed):`;
+      statusMessage = msgs.both;
     } else if (bookedCount > 0) {
-      statusMessage = `Here are your upcoming appointments:`;
+      statusMessage = msgs.upcoming;
     } else if (completedCount > 0) {
-      statusMessage = `Here are your completed appointments:`;
+      statusMessage = msgs.completed;
     }
 
     return {
@@ -911,13 +1042,20 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     message: string,
     data: Record<string, unknown>
   ): Promise<AramonResponse> {
+    const loginMsg = {
+      english: `Please log in to manage your appointments. 🔐`,
+      tagalog: `Mag-log in muna para ma-manage ang iyong mga appointment. 🔐`,
+      bicolano: `Mag-log in muna para ma-manage an saimong mga appointment. 🔐`,
+    };
+    const loginLabel = { english: '🔑 Login', tagalog: '🔑 Mag-login', bicolano: '🔑 Mag-login' };
+
     if (!authService.isAuthenticated()) {
       return {
-        message: `Please log in to manage your appointments. 🔐`,
+        message: loginMsg[this.currentLanguage],
         inlineUI: {
           type: 'QUICK_REPLIES',
           options: [
-            { id: '1', label: '🔑 Login', value: 'login' },
+            { id: '1', label: loginLabel[this.currentLanguage], value: 'login' },
           ],
         },
       };
@@ -928,9 +1066,13 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     if (appointmentId) {
       const result = await appointmentServiceDB.cancelAppointment(appointmentId);
       if (result.success) {
+        const cancelledMsg = {
+          english: '✅ Your appointment has been cancelled. Is there anything else I can help with?',
+          tagalog: '✅ Nakansela na ang iyong appointment. Mayroon pa bang matutulungan kita?',
+          bicolano: '✅ Nakansela na an saimong appointment. Igwa pa bang matabangan taka?',
+        };
         return {
-          message:
-            '✅ Your appointment has been cancelled. Is there anything else I can help with?',
+          message: cancelledMsg[this.currentLanguage],
         };
       }
     }
@@ -949,8 +1091,14 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
       createdAt: new Date(apt.created_at),
     }));
 
+    const whichMsg = {
+      english: 'Which appointment would you like to cancel?',
+      tagalog: 'Aling appointment ang gusto mong kanselahin?',
+      bicolano: 'Anong appointment an gusto mong kanselaron?',
+    };
+
     return {
-      message: 'Which appointment would you like to cancel?',
+      message: whichMsg[this.currentLanguage],
       inlineUI: {
         type: 'APPOINTMENT_LIST',
         appointments,
@@ -961,32 +1109,41 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
   async cancelAppointment(appointmentId: string): Promise<AramonResponse> {
     const result = await appointmentServiceDB.cancelAppointment(appointmentId);
 
+    const successMsg = {
+      english: '✅ Your appointment has been cancelled successfully. Would you like to book a new one?',
+      tagalog: '✅ Matagumpay na nakansela ang iyong appointment. Gusto mo bang mag-book ng bago?',
+      bicolano: '✅ Matagumpay na nakansela an saimong appointment. Gusto mo bang mag-book nin bago?',
+    };
+    const errorMsg = {
+      english: `I couldn't cancel that appointment. Please try again or contact the facility directly.`,
+      tagalog: `Hindi ko nakansela ang appointment. Subukan ulit o makipag-ugnayan sa pasilidad directly.`,
+      bicolano: `Dai ko nakansela an appointment. Subukan giraray o makipag-ugnayan sa pasilidad directly.`,
+    };
+    const bookNewLabel = { english: '📅 Book New Appointment', tagalog: '📅 Mag-book ng Bagong Appointment', bicolano: '📅 Mag-book nin Bagong Appointment' };
+    const noThanksLabel = { english: `No, that's all`, tagalog: 'Hindi na, salamat', bicolano: `Dai na, salamat` };
+
     this.conversationHistory.push({
       id: Date.now().toString(),
       role: 'assistant',
-      content: result.success
-        ? 'Your appointment has been cancelled.'
-        : 'Could not cancel the appointment.',
+      content: result.success ? successMsg[this.currentLanguage] : errorMsg[this.currentLanguage],
       timestamp: new Date(),
     });
 
     if (result.success) {
       return {
-        message:
-          '✅ Your appointment has been cancelled successfully. Would you like to book a new one?',
+        message: successMsg[this.currentLanguage],
         inlineUI: {
           type: 'QUICK_REPLIES',
           options: [
-            { id: '1', label: '📅 Book New Appointment', value: 'book appointment' },
-            { id: '2', label: "No, that's all", value: "no thanks" },
+            { id: '1', label: bookNewLabel[this.currentLanguage], value: 'book appointment' },
+            { id: '2', label: noThanksLabel[this.currentLanguage], value: 'no thanks' },
           ],
         },
       };
     }
 
     return {
-      message:
-        "I couldn't cancel that appointment. Please try again or contact the facility directly.",
+      message: errorMsg[this.currentLanguage],
     };
   }
 
@@ -1054,6 +1211,88 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
 
     const lowerMessage = message.toLowerCase();
     return keywords.some((keyword) => lowerMessage.includes(keyword));
+  }
+
+  private isQRCodeRelated(message: string): boolean {
+    const keywords = [
+      'qr code',
+      'my qr',
+      'show qr',
+      'health id',
+      'my health id',
+      'health qr',
+      'scan me',
+      'resident qr',
+      'nagacare qr',
+      'show me my qr',
+      'qr ko',
+      'aking qr',
+      'ipakita ang qr',
+    ];
+    const lowerMessage = message.toLowerCase();
+    return keywords.some((keyword) => lowerMessage.includes(keyword));
+  }
+
+  // ============================================================================
+  // SHOW QR CODE
+  // ============================================================================
+
+  handleShowQRCode(message: string): AramonResponse {
+    const lang = this.currentLanguage;
+
+    // Must be authenticated
+    if (!authService.isAuthenticated()) {
+      const loginMsg = {
+        english: `To view your Health QR Code, please log in first. Your QR code is uniquely linked to your NagaCare profile! 🔐`,
+        tagalog: `Para makita ang iyong Health QR Code, kailangan mo munang mag-log in. Ang iyong QR code ay naka-link sa iyong NagaCare profile! 🔐`,
+        bicolano: `Para mahiling an saimong Health QR Code, kaipuhan mo munang mag-log in. An saimong QR code naka-link sa saimong NagaCare profile! 🔐`,
+      };
+      return {
+        message: loginMsg[lang],
+        inlineUI: {
+          type: 'QUICK_REPLIES',
+          options: [
+            { id: '1', label: { english: '🔑 Login', tagalog: '🔑 Mag-login', bicolano: '🔑 Mag-login' }[lang], value: 'login' },
+            { id: '2', label: { english: '📝 Register', tagalog: '📝 Mag-register', bicolano: '📝 Mag-register' }[lang], value: 'register' },
+          ],
+        },
+      };
+    }
+
+    const resident = authService.getCurrentResident();
+
+    if (!resident) {
+      const noProfileMsg = {
+        english: `I couldn't find your resident profile. Please make sure your account is fully set up! 😕`,
+        tagalog: `Hindi ko mahanap ang iyong resident profile. Siguraduhing kumpleto ang iyong account! 😕`,
+        bicolano: `Dai ko mahanap an saimong resident profile. Siguraron na kumpleto an saimong account! 😕`,
+      };
+      return { message: noProfileMsg[lang] };
+    }
+
+    const introMsg = {
+      english: `Here's your personal **Health QR Code** 🏥\n\nThis QR code is uniquely linked to your NagaCare profile. When scanned by an authorized Naga City Health Worker, they can securely access your health records. Keep it handy for clinic visits!`,
+      tagalog: `Ito ang iyong personal na **Health QR Code** 🏥\n\nAng QR code na ito ay naka-link sa iyong NagaCare profile. Kapag na-scan ng authorized na Health Worker, maa-access nila ang iyong health records. Itago mo ito para sa iyong mga pagbisita sa klinika!`,
+      bicolano: `Ini an saimong personal na **Health QR Code** 🏥\n\nAn QR code na ini naka-link sa saimong NagaCare profile. Kun ma-scan kan authorized na Health Worker, pwede nilang ma-access an saimong health records. Itago mo ini para sa saimong mga pagbisita sa klinika!`,
+    };
+
+    return {
+      message: introMsg[lang],
+      inlineUI: {
+        type: 'QR_CODE_CARD',
+        residentData: {
+          residentId: resident.id,
+          name: resident.full_name,
+          barangay: resident.barangay,
+          purok: resident.purok,
+          sex: resident.sex,
+          birthDate: resident.birth_date,
+          contactNumber: resident.contact_number,
+          philhealthNo: resident.philhealth_no,
+        },
+      },
+      action: { type: 'SHOW_QR_CODE', data: {} },
+    };
   }
 
   private handlePregnancyProfile(message: string): AramonResponse {
@@ -1468,23 +1707,35 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     // This is for text responses during a flow
     if (state.currentFlow === 'BOOKING_APPOINTMENT') {
       // User might be providing additional info
+      const useOptionsMsg = {
+        english: 'Please use the options above to make your selection, or say "cancel" to start over.',
+        tagalog: 'Gamitin ang mga opsyon sa itaas para pumili, o sabihing "cancel" para magsimulang muli.',
+        bicolano: 'Gamiton an mga opsyon sa itaas para pumili, o sabihon na "cancel" para magsimula giraray.',
+      };
       return {
-        message:
-          'Please use the options above to make your selection, or say "cancel" to start over.',
+        message: useOptionsMsg[this.currentLanguage],
       };
     }
 
     // Default: reset and process normally
     this.stateManager.reset();
+    const helpMsg = {
+      english: 'Let me help you with that. What would you like to do?',
+      tagalog: 'Hayaan akong tumulong. Ano ang gusto mong gawin?',
+      bicolano: 'Patabangan taka. Ano an gusto mong gibuhon?',
+    };
+    const bookLabel = { english: '📅 Book Appointment', tagalog: '📅 Mag-book ng Appointment', bicolano: '📅 Mag-book nin Appointment' };
+    const findLabel = { english: '🏥 Find Facilities', tagalog: '🏥 Maghanap ng Pasilidad', bicolano: '🏥 Maghanap nin Pasilidad' };
+    const tipsLabel = { english: '💊 Health Tips', tagalog: '💊 Mga Tip sa Kalusugan', bicolano: '💊 Mga Tip sa Kalusugan' };
     // Return a prompt to continue - the actual message will be processed fresh
     return {
-      message: "Let me help you with that. What would you like to do?",
+      message: helpMsg[this.currentLanguage],
       inlineUI: {
         type: 'QUICK_REPLIES',
         options: [
-          { id: '1', label: '📅 Book Appointment', value: 'book appointment' },
-          { id: '2', label: '🏥 Find Facilities', value: 'find facilities' },
-          { id: '3', label: '💊 Health Tips', value: 'health tips' },
+          { id: '1', label: bookLabel[this.currentLanguage], value: 'book appointment' },
+          { id: '2', label: findLabel[this.currentLanguage], value: 'find facilities' },
+          { id: '3', label: tipsLabel[this.currentLanguage], value: 'health tips' },
         ],
       },
     };
@@ -1512,12 +1763,36 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     // Get user's name if logged in
     const resident = authService.getCurrentResident();
     const userName = resident?.full_name?.split(' ')[0] || ''; // First name only
-    
-    let message = userName 
-      ? `Hello, ${userName}! 👋 I'm Aramon, your health assistant for Naga City.\n\n`
-      : `Hello! 👋 I'm Aramon, your health assistant for Naga City.\n\n`;
-    
-    message += `I can help you with:\n• 📅 Booking appointments\n• 🏥 Finding health facilities\n• 💊 Health questions & tips\n• 📝 Yakap (PhilHealth Konsulta) application\n• 🤰 Pregnancy Profiling\n• 🚨 Emergency guidance`;
+
+    const greetingIntro = {
+      english: {
+        named: `Hello, ${userName}! 👋 I'm Aramon, your health assistant for Naga City.\n\n`,
+        unnamed: `Hello! 👋 I'm Aramon, your health assistant for Naga City.\n\n`,
+      },
+      tagalog: {
+        named: `Kumusta, ${userName}! 👋 Ako si Aramon, ang iyong health assistant para sa Naga City.\n\n`,
+        unnamed: `Kumusta! 👋 Ako si Aramon, ang iyong health assistant para sa Naga City.\n\n`,
+      },
+      bicolano: {
+        named: `Kumusta, ${userName}! 👋 Ako si Aramon, an saimong health assistant para sa Naga City.\n\n`,
+        unnamed: `Kumusta! 👋 Ako si Aramon, an saimong health assistant para sa Naga City.\n\n`,
+      },
+    };
+    const capabilitiesMsg = {
+      english: `I can help you with:\n• 📅 Booking appointments\n• 🏥 Finding health facilities\n• 💊 Health questions & tips\n• 📝 Yakap (PhilHealth Konsulta) application\n• 🤰 Pregnancy Profiling\n• 🪪 Your personal Health QR Code\n• 🚨 Emergency guidance`,
+      tagalog: `Matutulungan kita sa:\n• 📅 Pag-book ng appointment\n• 🏥 Paghanap ng health facilities\n• 💊 Mga katanungan at tips sa kalusugan\n• 📝 Yakap (PhilHealth Konsulta) application\n• 🤰 Pregnancy Profiling\n• 🪪 Iyong personal na Health QR Code\n• 🚨 Emergency guidance`,
+      bicolano: `Matatabangan taka sa:\n• 📅 Pag-book nin appointment\n• 🏥 Paghanap nin health facilities\n• 💊 Mga katanungan asin tips sa kalusugan\n• 📝 Yakap (PhilHealth Konsulta) application\n• 🤰 Pregnancy Profiling\n• 🪪 An saimong personal na Health QR Code\n• 🚨 Emergency guidance`,
+    };
+    const howCanIHelpMsg = {
+      english: `\n\nHow can I help you today?`,
+      tagalog: `\n\nPaano kita matutulungan ngayon?`,
+      bicolano: `\n\nPaano taka matatabangan ngunyan?`,
+    };
+
+    const lang = this.currentLanguage;
+    const intro = greetingIntro[lang];
+    let message = userName ? intro.named : intro.unnamed;
+    message += capabilitiesMsg[lang];
 
     let inlineUI: InlineUIComponent | undefined;
 
@@ -1532,7 +1807,12 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
         const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
         if (apt.appointment_date === tomorrowStr) {
-          message += `\n\n📌 **Reminder:** You have an appointment tomorrow at ${apt.time_slot} with ${apt.facility_name}.`;
+          const reminderMsg = {
+            english: `\n\n📌 **Reminder:** You have an appointment tomorrow at ${apt.time_slot} with ${apt.facility_name}.`,
+            tagalog: `\n\n📌 **Paalala:** Mayroon kang appointment bukas ng ${apt.time_slot} sa ${apt.facility_name}.`,
+            bicolano: `\n\n📌 **Paisi:** Igwa kang appointment bukas sa ${apt.time_slot} sa ${apt.facility_name}.`,
+          };
+          message += reminderMsg[this.currentLanguage];
 
           inlineUI = {
             type: 'APPOINTMENT_CARD',
@@ -1553,18 +1833,29 @@ The user is NOT logged in. For booking appointments or applying for Yakap, remin
     }
 
     if (!inlineUI) {
+      const baseOptions = [
+        { id: '1', label: { english: '📅 Book Appointment', tagalog: '📅 Mag-book ng Appointment', bicolano: '📅 Mag-book nin Appointment' }[this.currentLanguage], value: 'I want to book an appointment' },
+        { id: '2', label: { english: '🏥 Find Facilities', tagalog: '🏥 Maghanap ng Pasilidad', bicolano: '🏥 Maghanap nin Pasilidad' }[this.currentLanguage], value: 'Find nearby health facilities' },
+        { id: '3', label: { english: '📝 Apply for Yakap', tagalog: '📝 Mag-apply sa Yakap', bicolano: '📝 Mag-apply sa Yakap' }[this.currentLanguage], value: 'I want to apply for yakap' },
+        { id: '4', label: { english: '🤰 Pregnancy Profile', tagalog: '🤰 Pregnancy Profile', bicolano: '🤰 Pregnancy Profile' }[this.currentLanguage], value: 'pregnancy profile' },
+      ];
+
+      // Add QR Code option only for authenticated residents
+      if (authService.isAuthenticated()) {
+        baseOptions.push({
+          id: '5',
+          label: { english: '🪪 My QR Code', tagalog: '🪪 Aking QR Code', bicolano: '🪪 Sakuyang QR Code' }[this.currentLanguage],
+          value: 'show my qr code',
+        });
+      }
+
       inlineUI = {
         type: 'QUICK_REPLIES',
-        options: [
-          { id: '1', label: '📅 Book Appointment', value: 'I want to book an appointment' },
-          { id: '2', label: '🏥 Find Facilities', value: 'Find nearby health facilities' },
-          { id: '3', label: '📝 Apply for Yakap', value: 'I want to apply for yakap' },
-          { id: '4', label: '🤰 Pregnancy Profile', value: 'pregnancy profile' },
-        ],
+        options: baseOptions,
       };
     }
 
-    message += `\n\nHow can I help you today?`;
+    message += howCanIHelpMsg[this.currentLanguage];
 
     return { message, inlineUI };
   }

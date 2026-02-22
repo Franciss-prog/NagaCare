@@ -10,3 +10,4 @@ export { AppointmentCard } from './AppointmentCard';
 export { AppointmentList } from './AppointmentList';
 export { QuickReplies } from './QuickReplies';
 export { EmergencyCard } from './EmergencyCard';
+export { QRCodeCard } from './QRCodeCard';

@@ -7,10 +7,12 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { MapPin, Star, Clock, ChevronRight, CheckCircle, Navigation } from 'lucide-react-native';
 import { HealthFacility, FacilityWithDistance } from '../../services/facilityService';
+import { AppLanguage } from '../../types/aramon';
 
 interface FacilityPickerProps {
   facilities: (HealthFacility | FacilityWithDistance)[];
   onSelect: (facility: HealthFacility) => void;
+  language?: AppLanguage;
 }
 
 // Type guard to check if facility has distance info
@@ -27,7 +29,8 @@ const FacilityCard: React.FC<{
   getFacilityIcon: (type: HealthFacility['type']) => string;
   getFacilityTypeLabel: (type: HealthFacility['type']) => string;
   formatDistance: (km: number) => string;
-}> = ({ facility, onSelect, getFacilityIcon, getFacilityTypeLabel, formatDistance }) => {
+  language: AppLanguage;
+}> = ({ facility, onSelect, getFacilityIcon, getFacilityTypeLabel, formatDistance, language }) => {
   const [expanded, setExpanded] = useState(false);
   const hasDistance = isFacilityWithDistance(facility);
   const visibleServices = expanded ? facility.services : facility.services.slice(0, 3);
@@ -94,7 +97,7 @@ const FacilityCard: React.FC<{
             <View className="flex-row items-center">
               <Star size={14} {...{ color: "#fbbf24", fill: "#fbbf24" }} />
               <Text className="text-amber-400 text-sm ml-1 font-medium">
-                YAKAP Accredited
+                {{ english: 'YAKAP Accredited', tagalog: 'YAKAP Accredited', bicolano: 'YAKAP Accredited' }[language]}
               </Text>
             </View>
           )}
@@ -128,7 +131,10 @@ const FacilityCard: React.FC<{
               className="bg-cyan-500/20 rounded-full px-2 py-0.5"
             >
               <Text className="text-cyan-400 text-xs font-medium">
-                {expanded ? 'Show less' : `+${facility.services.length - 3} more`}
+                {expanded
+                  ? { english: 'Show less', tagalog: 'Ipakita nang kaunti', bicolano: 'Ipahiling nin kubus' }[language]
+                  : `+${facility.services.length - 3} ${{ english: 'more', tagalog: 'pa', bicolano: 'pa' }[language]}`
+                }
               </Text>
             </TouchableOpacity>
           )}
@@ -137,7 +143,9 @@ const FacilityCard: React.FC<{
 
       {/* Select Button — pinned to bottom */}
       <View className="flex-row items-center justify-center bg-cyan-600 rounded-xl py-2 mt-auto">
-        <Text className="text-white font-semibold mr-1">Select</Text>
+        <Text className="text-white font-semibold mr-1">
+          {{ english: 'Select', tagalog: 'Piliin', bicolano: 'Pilion' }[language]}
+        </Text>
         <ChevronRight size={16} {...{ color: "white" }} />
       </View>
     </TouchableOpacity>
@@ -147,6 +155,7 @@ const FacilityCard: React.FC<{
 export const FacilityPicker: React.FC<FacilityPickerProps> = ({
   facilities,
   onSelect,
+  language = 'english',
 }) => {
   const getFacilityIcon = (type: HealthFacility['type']) => {
     switch (type) {
@@ -164,25 +173,23 @@ export const FacilityPicker: React.FC<FacilityPickerProps> = ({
   };
 
   const getFacilityTypeLabel = (type: HealthFacility['type']) => {
-    switch (type) {
-      case 'hospital':
-        return 'Hospital';
-      case 'health-center':
-        return 'Health Center';
-      case 'clinic':
-        return 'Clinic';
-      case 'pharmacy':
-        return 'Pharmacy';
-      default:
-        return 'Facility';
-    }
+    const labels: Record<HealthFacility['type'] | 'default', Record<AppLanguage, string>> = {
+      hospital:      { english: 'Hospital',      tagalog: 'Ospital',        bicolano: 'Ospital'         },
+      'health-center': { english: 'Health Center', tagalog: 'Health Center',  bicolano: 'Health Center'   },
+      clinic:        { english: 'Clinic',        tagalog: 'Klinika',        bicolano: 'Klinika'         },
+      pharmacy:      { english: 'Pharmacy',      tagalog: 'Parmasya',       bicolano: 'Parmasya'        },
+      default:       { english: 'Facility',      tagalog: 'Pasilidad',      bicolano: 'Pasilidad'       },
+    };
+    return (labels[type] ?? labels.default)[language];
   };
 
   const formatDistance = (km: number): string => {
     if (km < 1) {
-      return `${Math.round(km * 1000)}m away`;
+      const meters = Math.round(km * 1000);
+      return { english: `${meters}m away`, tagalog: `${meters}m ang layo`, bicolano: `${meters}m an kalayo` }[language];
     }
-    return `${km.toFixed(1)}km away`;
+    const kms = km.toFixed(1);
+    return { english: `${kms}km away`, tagalog: `${kms}km ang layo`, bicolano: `${kms}km an kalayo` }[language];
   };
 
   return (
@@ -200,13 +207,14 @@ export const FacilityPicker: React.FC<FacilityPickerProps> = ({
             getFacilityIcon={getFacilityIcon}
             getFacilityTypeLabel={getFacilityTypeLabel}
             formatDistance={formatDistance}
+            language={language}
           />
         ))}
       </ScrollView>
 
       {/* Helper Text */}
       <Text className="text-slate-500 text-xs text-center mt-2">
-        Swipe to see more options →
+        {{ english: 'Swipe to see more options →', tagalog: 'I-swipe para makita ang iba pang opsyon →', bicolano: 'I-swipe para mahiling an ibang opsyon →' }[language]}
       </Text>
     </View>
   );
