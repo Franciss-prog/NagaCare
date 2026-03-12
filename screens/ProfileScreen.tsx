@@ -14,10 +14,6 @@ import {
   StatusBar,
 } from 'react-native';
 import { 
-  Settings, 
-  Bell, 
-  Shield, 
-  HelpCircle, 
   LogOut, 
   ChevronLeft,
   MapPin,
@@ -77,32 +73,7 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
     });
   };
 
-  const settingsOptions = [
-    {
-      title: 'Notifications',
-      description: 'Manage alert preferences',
-      icon: Bell,
-      color: '#f97316',
-    },
-    {
-      title: 'Privacy & Security',
-      description: 'Control your data',
-      icon: Shield,
-      color: '#8b5cf6',
-    },
-    {
-      title: 'Help & Support',
-      description: 'Get assistance',
-      icon: HelpCircle,
-      color: '#06b6d4',
-    },
-    {
-      title: 'App Settings',
-      description: 'Preferences',
-      icon: Settings,
-      color: '#64748b',
-    },
-  ];
+
 
   return (
     <View className="flex-1 bg-[#0b1220]">
@@ -301,36 +272,7 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
           </TouchableOpacity>
         </View>
 
-        {/* Settings */}
-        <View className="px-4 mb-6">
-          <Text className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">
-            Settings
-          </Text>
-          {settingsOptions.map((option, index) => {
-            const IconComponent = option.icon;
-            return (
-              <TouchableOpacity 
-                key={index} 
-                className="mb-3 flex-row items-center justify-between rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4" 
-                activeOpacity={0.7}
-              >
-                <View className="flex-row items-center flex-1">
-                  <View
-                    className="h-10 w-10 items-center justify-center rounded-xl mr-3"
-                    style={{ backgroundColor: option.color + '20' }}
-                  >
-                    <IconComponent size={20} {...{ color: option.color }} />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="font-medium text-white">{option.title}</Text>
-                    <Text className="text-xs text-slate-400">{option.description}</Text>
-                  </View>
-                </View>
-                <Text className="text-slate-600 text-xl">›</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+
 
         {/* Logout Button */}
         <View className="px-4 mb-6">
